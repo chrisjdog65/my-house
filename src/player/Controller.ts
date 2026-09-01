@@ -29,8 +29,10 @@ export class PlayerController {
   private body: RAPIER.RigidBody;
   private collider: RAPIER.Collider;
   private cc: RAPIER.KinematicCharacterController;
-  readonly radius = 0.3;
-  readonly halfHeight = 0.6; // capsule cylinder half-height => total 1.8
+  readonly radius = 0.28;
+  /** rounded-cylinder half height (flat bottom climbs stairs cleanly; the border keeps it from snagging) */
+  readonly halfHeight = 0.82;
+  readonly border = 0.06;
   character: Character;
   private footAcc = 0;
   private surface = 'wood';
@@ -52,16 +54,17 @@ export class PlayerController {
     const c = this.capsuleCenter(spawn);
     const bd = RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(c.x, c.y, c.z);
     this.body = physics.world.createRigidBody(bd);
-    const cd = RAPIER.ColliderDesc.capsule(this.halfHeight, this.radius)
+    const cd = RAPIER.ColliderDesc.roundCylinder(this.halfHeight, this.radius, this.border)
       .setCollisionGroups(groups(GROUP.PLAYER, GROUP.ALL))
       .setFriction(0.0);
     this.collider = physics.world.createCollider(cd, this.body);
     physics.setMeta(this.collider, { player: true });
     this.cc = physics.world.createCharacterController(0.03);
-    this.cc.enableAutostep(0.36, 0.12, true);
+    this.cc.enableAutostep(0.38, 0.1, true);
     this.cc.enableSnapToGround(0.35);
-    this.cc.setMaxSlopeClimbAngle((52 * Math.PI) / 180);
-    this.cc.setMinSlopeSlideAngle((58 * Math.PI) / 180);
+    // stair nosings produce steep edge contacts; allow them, but still slide off true walls
+    this.cc.setMaxSlopeClimbAngle((72 * Math.PI) / 180);
+    this.cc.setMinSlopeSlideAngle((78 * Math.PI) / 180);
     this.cc.setApplyImpulsesToDynamicBodies(true);
     this.cc.setCharacterMass(78);
     this.cc.setSlideEnabled(true);
@@ -69,8 +72,11 @@ export class PlayerController {
 
   get rigidBody() { return this.body; }
 
+  /** distance from the feet to the collider centre */
+  private get centerOffset() { return this.halfHeight + this.border + 0.01; }
+
   private capsuleCenter(feet: THREE.Vector3) {
-    return new THREE.Vector3(feet.x, feet.y + this.halfHeight + this.radius + 0.01, feet.z);
+    return new THREE.Vector3(feet.x, feet.y + this.centerOffset, feet.z);
   }
 
   /** Teleport */
@@ -155,7 +161,7 @@ export class PlayerController {
       this.airTime = 0;
     }
     if (!this.grounded) this.airTime += dt;
-    this.currPos.set(next.x, next.y - this.halfHeight - this.radius - 0.01, next.z);
+    this.currPos.set(next.x, next.y - this.centerOffset, next.z);
     this.wasGrounded = wasGrounded;
   }
 

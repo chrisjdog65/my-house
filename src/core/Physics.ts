@@ -79,6 +79,34 @@ export class Physics {
     return c;
   }
 
+  /** Static box with an arbitrary orientation (ramps, roofs). */
+  addBoxQuat(center: { x: number; y: number; z: number }, size: { x: number; y: number; z: number }, quat: THREE.Quaternion, opts: { friction?: number; group?: number; meta?: any } = {}): RAPIER.Collider {
+    const desc = RAPIER.ColliderDesc.cuboid(size.x / 2, size.y / 2, size.z / 2)
+      .setTranslation(center.x, center.y, center.z)
+      .setRotation({ x: quat.x, y: quat.y, z: quat.z, w: quat.w })
+      .setFriction(opts.friction ?? 0.8)
+      .setCollisionGroups(groups(opts.group ?? GROUP.STATIC, GROUP.ALL));
+    const c = this.world.createCollider(desc);
+    if (opts.meta) this.setMeta(c, opts.meta);
+    return c;
+  }
+
+  /**
+   * Invisible ramp collider for a straight flight of stairs (smooth to walk, no per-step bumps).
+   * The ramp surface passes through the tread nosings from (zBottom, yBottom) to (zTop, yTop).
+   */
+  addStairRamp(x0: number, x1: number, zBottom: number, yBottom: number, zTop: number, yTop: number, meta: any = { surface: 'oak' }): RAPIER.Collider {
+    const dz = zTop - zBottom, dy = yTop - yBottom;
+    const len = Math.hypot(dz, dy);
+    const thick = 0.3;
+    // local +z of the box should point along (0, dy, dz); rotation about X by theta maps +z to (0, -sin, cos)
+    const theta = Math.atan2(-dy, dz);
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), theta);
+    const n = new THREE.Vector3(0, 1, 0).applyQuaternion(q); // ramp normal (up)
+    const mid = new THREE.Vector3((x0 + x1) / 2, (yBottom + yTop) / 2, (zBottom + zTop) / 2).addScaledVector(n, -thick / 2);
+    return this.addBoxQuat(mid, { x: x1 - x0, y: thick, z: len }, q, { meta });
+  }
+
   /** Static box from a world-space bounding box. */
   addBoxFromBounds(box: THREE.Box3, opts: { friction?: number; group?: number; meta?: any } = {}): RAPIER.Collider {
     const c = box.getCenter(new THREE.Vector3());

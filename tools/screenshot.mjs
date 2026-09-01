@@ -88,6 +88,7 @@ async function main() {
   // block anything not served by the dev server (fonts etc.) so page load never stalls on the network
   await page.route('**/*', (route) => {
     const u = route.request().url();
+    if (u.includes('/@vite/client')) { route.abort(); return; } // no HMR reloads mid-capture
     if (u.startsWith(URL_BASE) || u.startsWith('data:') || u.startsWith('blob:')) route.continue(); else route.abort();
   });
   const logs = [];

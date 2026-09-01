@@ -50,6 +50,7 @@ export class Door implements Interactable {
   name: string;
   locked = false;
   private lastMoving = false;
+  private wallNormal = new THREE.Vector3(0, 0, 1);
 
   constructor(private ctx: Ctx, readonly def: OpeningDef, wallAlongX: boolean, floorY: number, thickness: number, opts: { exterior?: boolean } = {}) {
     const w = def.w - 0.04, h = def.h - 0.02;
@@ -69,6 +70,7 @@ export class Door implements Interactable {
     this.object.rotation.y = base;
     // determine sign so that a positive angle swings toward def.swing * normal
     const normal = wallAlongX ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+    this.wallNormal = normal.clone();
     const testDir = new THREE.Vector3(Math.cos(base + 0.1), 0, -Math.sin(base + 0.1));
     const towards = Math.sign(testDir.dot(normal)) || 1;
     this.sign = towards === (def.swing ?? 1) ? 1 : -1;
@@ -160,14 +162,21 @@ export class Door implements Interactable {
   setOpen(open: boolean, from?: THREE.Vector3) {
     this.open = open;
     if (open) {
-      // swing away from the player if they're on the swing side would be nicer; keep plan swing
-      this.target = this.sign * this.maxAngle;
+      // swing AWAY from whoever opens it (never shove the player); default to the plan's swing side
+      let side = this.def.swing ?? 1;
+      if (from) {
+        const hinge = this.object.position;
+        const n = this.wallNormal;
+        const playerSide = Math.sign((from.x - hinge.x) * n.x + (from.z - hinge.z) * n.z) || -side;
+        side = -playerSide as 1 | -1;
+      }
+      const angleSign = side === (this.def.swing ?? 1) ? this.sign : -this.sign;
+      this.target = angleSign * this.maxAngle;
       this.ctx.audio.play('doorOpen', this.focus);
       this.ctx.audio.play('doorCreak', this.focus, 0.5);
     } else {
       this.target = 0;
     }
-    void from;
   }
 
   update(dt: number) {
@@ -492,8 +501,10 @@ export class Structure {
           ctx.batch.add(p, { worldUV: true });
         }
       }
-      // ceiling collider (keeps thrown props inside)
-      ctx.physics.addBox({ x: (rect[0] + rect[2]) / 2, y: ceilY + 0.15, z: (rect[1] + rect[3]) / 2 }, { x: rect[2] - rect[0], y: 0.3, z: rect[3] - rect[1] });
+      // ceiling colliders (keep thrown props inside), leaving the stair openings free
+      for (const r of rectMinusHoles(rect, holesAbove)) {
+        ctx.physics.addBox({ x: (r[0] + r[2]) / 2, y: ceilY + 0.15, z: (r[1] + r[3]) / 2 }, { x: r[2] - r[0], y: 0.3, z: r[3] - r[1] });
+      }
     }
     // slab edges at holes on this floor (visible band between the floor below's ceiling and this floor)
     for (const h of holesHere) {
@@ -541,7 +552,12 @@ export class Structure {
       const tread = Prim.rbox(w + 0.02, 0.035, s.tread + 0.03, 0.008, treadMat);
       tread.position.set(cx, y1 - 0.0175, zc - s.dir * 0.015);
       ctx.batch.add(tread);
-      ctx.physics.addBox({ x: cx, y: (y0 + y1) / 2, z: zc }, { x: w, y: y1 - y0, z: s.tread }, 0, { meta: { surface: 'oak' } });
+    }
+    // one smooth ramp collider through the nosings (extended one tread into the lower floor so there is no lip)
+    {
+      const zBottom = s.zStart - s.dir * s.tread;
+      const zTop = s.zStart + s.dir * nTreads * s.tread;
+      ctx.physics.addStairRamp(s.x0, s.x1, zBottom, s.yBottom, zTop, s.yTop, { surface: 'oak', stairs: true });
     }
     // stringers (side boards) along the run
     const runLen = nTreads * s.tread;
@@ -737,9 +753,10 @@ export class Structure {
       const h = -HOUSE.groundY - (i + 1) * rise + rise;
       block.position.set(0, HOUSE.groundY + h / 2, z);
       ctx.batch.add(block, { worldUV: true });
-      ctx.physics.addBox(block.position, { x: sw, y: h, z: tread }, 0, { meta: { surface: 'concrete' } });
       void y1;
     }
+    // ramp collider for the porch steps (from the deck edge down to the walk)
+    ctx.physics.addStairRamp(-sw / 2, sw / 2, z1, 0, z1 + steps * tread, HOUSE.groundY, { surface: 'concrete', stairs: true });
     // columns and roof
     const colMat = mats.trim;
     const cols: [number, number][] = [[x0 + 0.25, z1 - 0.25], [x1 - 0.25, z1 - 0.25], [x0 + 0.25, z0 + 0.5], [x1 - 0.25, z0 + 0.5]];

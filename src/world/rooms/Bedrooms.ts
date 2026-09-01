@@ -1,15 +1,30 @@
 /**
- * Bedrooms — room builder (STUB: to be furnished).
+ * Bedrooms — room builder for the upper floor: upstairs hall, kids bedroom (bedroom2),
+ * guest bedroom (bedroom3), office bedroom (bedroom4) and its closet (closet2).
+ * Each room lives in its own `Bedrooms.<room>.ts` module; shared helpers are in `Bedrooms.shared.ts`.
  */
 import type { Ctx } from '../Context';
 import type { Structure } from '../Structure';
-import { roomById, LEVELS } from '../Plan';
-import { ceilingDome } from '../Props';
+import { buildUpperHall } from './Bedrooms.hall';
+import { buildKidsRoom } from './Bedrooms.kids';
+import { buildGuestRoom } from './Bedrooms.guest';
+import { buildOffice } from './Bedrooms.office';
+import { buildCloset2 } from './Bedrooms.closet';
 
 export function buildBedrooms(ctx: Ctx, structure: Structure) {
   void structure;
-  const room = roomById('bedroom3');
-  const lvl = LEVELS[room.floor];
-  // placeholder light so the room is visible before furnishing
-  ceilingDome(ctx, (room.x0 + room.x1) / 2, lvl.y + lvl.ceiling, (room.z0 + room.z1) / 2, room.id);
+  const rooms: [string, (c: Ctx) => void][] = [
+    ['upperhall', buildUpperHall],
+    ['bedroom2', buildKidsRoom],
+    ['bedroom3', buildGuestRoom],
+    ['bedroom4', buildOffice],
+    ['closet2', buildCloset2],
+  ];
+  for (const [id, build] of rooms) {
+    try {
+      build(ctx);
+    } catch (e) {
+      console.error(`[bedrooms] ${id} failed:`, e);
+    }
+  }
 }
