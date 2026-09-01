@@ -9,9 +9,10 @@ export default defineConfig({
     chunkSizeWarningLimit: 4000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ['three'],
-          rapier: ['@dimforge/rapier3d-compat'],
+        manualChunks(id: string) {
+          if (id.includes('@dimforge/rapier3d-compat')) return 'rapier';
+          if (id.includes('node_modules/three')) return 'three';
+          return undefined;
         },
       },
     },

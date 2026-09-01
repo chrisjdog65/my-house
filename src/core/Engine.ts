@@ -12,6 +12,8 @@ export class Engine {
   postfx!: PostFX;
   private lastTime = performance.now();
   lastStats = { calls: 0, triangles: 0 };
+  /** enable dynamic resolution scaling (disabled for deterministic screenshots) */
+  adaptive = true;
   private updaters: ((dt: number, t: number) => void)[] = [];
   private running = false;
   private frames = 0;
@@ -56,10 +58,30 @@ export class Engine {
     this.resize();
   }
 
+  /** dynamic resolution multiplier (0.6..1) applied on top of the user's render scale to hold a smooth frame rate */
+  private dynamicScale = 1;
+  private slowFrames = 0;
+  private fastTime = 0;
+
   private applyResolution() {
     this.renderScale = settings.get('resolutionScale');
-    const dpr = Math.min(window.devicePixelRatio || 1, 2) * this.renderScale;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2) * this.renderScale * this.dynamicScale;
     this.renderer.setPixelRatio(Math.max(0.5, Math.min(3, dpr)));
+  }
+
+  /** Lower the internal resolution when frames are consistently slow; raise it back when there is headroom. */
+  private adaptResolution(dt: number) {
+    if (dt > 1 / 40) { this.slowFrames++; this.fastTime = 0; } else { this.slowFrames = Math.max(0, this.slowFrames - 1); }
+    if (dt < 1 / 70) this.fastTime += dt; else this.fastTime = 0;
+    if (this.slowFrames > 45 && this.dynamicScale > 0.6) {
+      this.dynamicScale = Math.max(0.6, this.dynamicScale - 0.1);
+      this.slowFrames = 0;
+      this.applyResolution(); this.resize();
+    } else if (this.fastTime > 6 && this.dynamicScale < 1) {
+      this.dynamicScale = Math.min(1, this.dynamicScale + 0.1);
+      this.fastTime = 0;
+      this.applyResolution(); this.resize();
+    }
   }
 
   resize() {
@@ -86,6 +108,7 @@ export class Engine {
       const dt = Math.min((now - this.lastTime) / 1000, 0.1);
       this.lastTime = now;
       this.time += dt;
+      if (this.adaptive) this.adaptResolution(dt);
       for (const u of this.updaters) u(dt, this.time);
       this.lastStats = { calls: this.renderer.info.render.calls, triangles: this.renderer.info.render.triangles };
       this.renderer.info.reset();

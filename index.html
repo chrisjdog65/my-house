@@ -119,6 +119,8 @@
           <div><kbd>Tab</kbd><span>Floor plan map</span></div>
           <div><kbd>H</kbd><span>Toggle help</span></div>
           <div><kbd>Esc</kbd><span>Pause</span></div>
+          <div><kbd>🎮</kbd><span>Gamepad: sticks move/look · A jump · X use · B crouch · RB throw</span></div>
+          <div><kbd>📱</kbd><span>Touch: left stick moves · drag right side to look · buttons</span></div>
         </div>
         <div class="menu-buttons horizontal">
           <button id="btn-controls-back" class="btn primary">Back</button>
@@ -137,6 +139,16 @@
       <div id="toast" class="glass hidden"></div>
       <div id="map" class="glass hidden"><canvas id="map-canvas" width="420" height="420"></canvas><div id="map-title">Ground Floor</div></div>
       <div id="clock" class="glass">3:30 PM</div>
+      <!-- touch controls (shown on touch devices) -->
+      <div id="touch" class="hidden">
+        <div id="joystick"><div id="joystick-knob"></div></div>
+        <div id="touch-buttons">
+          <button id="tb-jump" class="tb">Jump</button>
+          <button id="tb-interact" class="tb primary">Use</button>
+          <button id="tb-sprint" class="tb">Run</button>
+          <button id="tb-pause" class="tb small">II</button>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>

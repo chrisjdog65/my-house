@@ -42,6 +42,7 @@ async function main() {
   ui.setState('loading');
   // `auto` is used by the screenshot tooling; preserving the drawing buffer lets headless captures read the canvas.
   const engine = new Engine(canvas, { preserveDrawingBuffer: AUTO });
+  engine.adaptive = !AUTO; // fixed resolution for screenshot tooling
   const input = new Input(canvas);
   const audio = new AudioManager();
 

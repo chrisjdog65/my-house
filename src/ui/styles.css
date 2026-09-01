@@ -128,6 +128,16 @@ kbd {
 #map canvas { display: block; border-radius: 10px; }
 #map-title { text-align: center; margin-top: 8px; font-size: 13px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
 
+/* Touch controls */
+#touch { position: absolute; inset: 0; pointer-events: none; }
+#joystick { position: absolute; left: 36px; bottom: 60px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); pointer-events: auto; touch-action: none; }
+#joystick-knob { position: absolute; left: 50%; top: 50%; width: 60px; height: 60px; border-radius: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.35); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+#touch-buttons { position: absolute; right: 28px; bottom: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; pointer-events: auto; }
+.tb { width: 76px; height: 76px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2); background: rgba(14,18,26,0.55); color: var(--fg); font: 600 14px var(--font); touch-action: none; -webkit-user-select: none; user-select: none; }
+.tb.primary { background: linear-gradient(135deg, var(--accent), #e39a3a); color: #1b1206; border-color: transparent; }
+.tb.small { width: 56px; height: 56px; align-self: center; justify-self: center; }
+.tb:active { filter: brightness(1.3); }
+
 .click-to-play { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 15; color: var(--fg); font-size: 16px; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,0.9); }
 .click-to-play .glass { padding: 12px 20px; border-radius: 12px; }
 

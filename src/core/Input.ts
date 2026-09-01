@@ -109,10 +109,11 @@ export class Input {
       this.pointerLocked = document.pointerLockElement === el;
     });
 
-    // touch: single finger drag = look
+    // touch: a finger dragged on the right half of the screen = look (the joystick lives on the left)
     el.addEventListener('touchstart', (e) => {
       if (!this.enabled) return;
       const t = e.changedTouches[0];
+      if (t.clientX < window.innerWidth * 0.4) return;
       if (!this.touchLook) this.touchLook = { id: t.identifier, x: t.clientX, y: t.clientY };
     }, { passive: true });
     el.addEventListener('touchmove', (e) => {
@@ -134,6 +135,49 @@ export class Input {
 
     window.addEventListener('gamepadconnected', (e) => { this.gamepadIndex = e.gamepad.index; });
     window.addEventListener('gamepaddisconnected', () => { this.gamepadIndex = null; });
+
+    this.setupTouchControls();
+  }
+
+  /** virtual joystick vector (-1..1) */
+  private joy = { x: 0, y: 0, active: false };
+  readonly isTouchDevice = typeof window !== 'undefined' && (('ontouchstart' in window) || navigator.maxTouchPoints > 0);
+
+  private setupTouchControls() {
+    const root = document.getElementById('touch');
+    const stick = document.getElementById('joystick');
+    const knob = document.getElementById('joystick-knob');
+    if (!root || !stick || !knob) return;
+    if (!this.isTouchDevice) return;
+    root.classList.remove('hidden');
+    let id: number | null = null;
+    const R = 50;
+    const move = (t: Touch) => {
+      const r = stick.getBoundingClientRect();
+      let dx = t.clientX - (r.left + r.width / 2), dy = t.clientY - (r.top + r.height / 2);
+      const len = Math.hypot(dx, dy);
+      if (len > R) { dx *= R / len; dy *= R / len; }
+      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      this.joy.x = dx / R; this.joy.y = -dy / R; this.joy.active = true;
+    };
+    stick.addEventListener('touchstart', (e) => { const t = e.changedTouches[0]; id = t.identifier; move(t); e.preventDefault(); }, { passive: false });
+    stick.addEventListener('touchmove', (e) => { for (const t of Array.from(e.changedTouches)) if (t.identifier === id) move(t); e.preventDefault(); }, { passive: false });
+    const end = (e: TouchEvent) => { for (const t of Array.from(e.changedTouches)) if (t.identifier === id) { id = null; this.joy.x = 0; this.joy.y = 0; this.joy.active = false; knob.style.transform = 'translate(-50%, -50%)'; } };
+    stick.addEventListener('touchend', end);
+    stick.addEventListener('touchcancel', end);
+    // the look-drag must ignore touches that start on the joystick / buttons
+    const bind = (elId: string, action: string, hold = false) => {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      el.addEventListener('touchstart', (e) => { this.down.add(action); this.pressed.add(action); e.preventDefault(); e.stopPropagation(); }, { passive: false });
+      const up = (e: Event) => { this.down.delete(action); this.released.add(action); e.preventDefault(); void hold; };
+      el.addEventListener('touchend', up);
+      el.addEventListener('touchcancel', up);
+    };
+    bind('tb-jump', 'jump');
+    bind('tb-interact', 'interact');
+    bind('tb-sprint', 'sprint', true);
+    bind('tb-pause', 'pause');
   }
 
   requestPointerLock() {
@@ -175,6 +219,7 @@ export class Input {
       if (this.down.has('forward')) my += 1;
       if (this.down.has('back')) my -= 1;
     }
+    if (this.joy.active && this.enabled) { mx += this.joy.x; my += this.joy.y; }
     let gpLookX = 0, gpLookY = 0;
     if (this.gamepadIndex !== null && this.enabled) {
       const gp = navigator.getGamepads()[this.gamepadIndex];
