@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0f14" />
+    <title>My House — Interactive 3D Home</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏡%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/ui/styles.css" />
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <!-- Loading -->
+    <div id="loading" class="screen">
+      <div class="loading-inner">
+        <div class="brand">
+          <div class="brand-icon">🏡</div>
+          <h1>My House</h1>
+          <p class="tagline">A home you can walk through.</p>
+        </div>
+        <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
+        <div id="progress-label" class="progress-label">Preparing…</div>
+      </div>
+    </div>
+
+    <!-- Main menu -->
+    <div id="menu" class="screen hidden">
+      <div class="menu-card glass">
+        <div class="brand small">
+          <div class="brand-icon">🏡</div>
+          <h1>My House</h1>
+          <p class="tagline">A detailed, interactive home in third person.</p>
+        </div>
+        <div class="menu-buttons">
+          <button id="btn-play" class="btn primary">Enter the House</button>
+          <button id="btn-settings" class="btn">Settings</button>
+          <button id="btn-controls" class="btn">Controls</button>
+        </div>
+        <div class="menu-footer">
+          <span>WASD move · Mouse look · E interact · Shift sprint · Space jump · Esc pause</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pause menu -->
+    <div id="pause" class="screen hidden">
+      <div class="menu-card glass">
+        <h2>Paused</h2>
+        <div class="menu-buttons">
+          <button id="btn-resume" class="btn primary">Resume</button>
+          <button id="btn-pause-settings" class="btn">Settings</button>
+          <button id="btn-pause-controls" class="btn">Controls</button>
+          <button id="btn-teleport" class="btn">Teleport to Front Door</button>
+          <button id="btn-quit" class="btn subtle">Main Menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings" class="screen hidden">
+      <div class="menu-card glass wide">
+        <h2>Settings</h2>
+        <div class="settings-grid">
+          <section>
+            <h3>Graphics</h3>
+            <label class="row"><span>Quality preset</span>
+              <select id="s-quality">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="ultra">Ultra</option>
+              </select>
+            </label>
+            <label class="row"><span>Render scale</span><input id="s-scale" type="range" min="0.5" max="2" step="0.05" /><output id="o-scale"></output></label>
+            <label class="row"><span>Shadows</span><input id="s-shadows" type="checkbox" /></label>
+            <label class="row"><span>Ambient occlusion</span><input id="s-ao" type="checkbox" /></label>
+            <label class="row"><span>Bloom</span><input id="s-bloom" type="checkbox" /></label>
+            <label class="row"><span>Anti-aliasing</span><input id="s-aa" type="checkbox" /></label>
+            <label class="row"><span>Field of view</span><input id="s-fov" type="range" min="45" max="100" step="1" /><output id="o-fov"></output></label>
+            <label class="row"><span>Time of day</span><input id="s-time" type="range" min="0" max="24" step="0.1" /><output id="o-time"></output></label>
+            <label class="row"><span>Show FPS</span><input id="s-fps" type="checkbox" /></label>
+          </section>
+          <section>
+            <h3>Controls &amp; Audio</h3>
+            <label class="row"><span>Mouse sensitivity</span><input id="s-sens" type="range" min="0.2" max="3" step="0.05" /><output id="o-sens"></output></label>
+            <label class="row"><span>Invert Y</span><input id="s-invert" type="checkbox" /></label>
+            <label class="row"><span>Camera distance</span><input id="s-camdist" type="range" min="1.5" max="7" step="0.1" /><output id="o-camdist"></output></label>
+            <label class="row"><span>Camera sway</span><input id="s-bob" type="checkbox" /></label>
+            <label class="row"><span>Volume</span><input id="s-volume" type="range" min="0" max="1" step="0.01" /><output id="o-volume"></output></label>
+          </section>
+        </div>
+        <div class="menu-buttons horizontal">
+          <button id="btn-settings-reset" class="btn subtle">Reset defaults</button>
+          <button id="btn-settings-back" class="btn primary">Back</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls" class="screen hidden">
+      <div class="menu-card glass wide">
+        <h2>Controls</h2>
+        <div class="controls-grid">
+          <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Move</span></div>
+          <div><kbd>Mouse</kbd><span>Look around (click to capture)</span></div>
+          <div><kbd>Shift</kbd><span>Sprint</span></div>
+          <div><kbd>Space</kbd><span>Jump</span></div>
+          <div><kbd>C</kbd><span>Crouch</span></div>
+          <div><kbd>E</kbd><span>Interact (doors, lights, fireplace, appliances…)</span></div>
+          <div><kbd>Click</kbd><span>Pick up / Throw held object</span></div>
+          <div><kbd>Q</kbd><span>Drop held object</span></div>
+          <div><kbd>Scroll</kbd><span>Zoom camera</span></div>
+          <div><kbd>V</kbd><span>Toggle shoulder side</span></div>
+          <div><kbd>F</kbd><span>Flashlight</span></div>
+          <div><kbd>Tab</kbd><span>Floor plan map</span></div>
+          <div><kbd>H</kbd><span>Toggle help</span></div>
+          <div><kbd>Esc</kbd><span>Pause</span></div>
+        </div>
+        <div class="menu-buttons horizontal">
+          <button id="btn-controls-back" class="btn primary">Back</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <div id="reticle"><div class="dot"></div></div>
+      <div id="prompt" class="glass hidden"><kbd id="prompt-key">E</kbd><span id="prompt-text">Open door</span></div>
+      <div id="room-label" class="hidden"><div class="room-eyebrow">You are in the</div><div id="room-name">Living Room</div></div>
+      <div id="held" class="glass hidden"><span id="held-text">Holding: Mug</span><span class="hint"><kbd>Click</kbd> throw · <kbd>Q</kbd> drop</span></div>
+      <div id="fps" class="hidden">60 fps</div>
+      <div id="hint-bar"><span><kbd>H</kbd> help</span><span><kbd>Tab</kbd> map</span><span><kbd>Esc</kbd> pause</span></div>
+      <div id="toast" class="glass hidden"></div>
+      <div id="map" class="glass hidden"><canvas id="map-canvas" width="420" height="420"></canvas><div id="map-title">Ground Floor</div></div>
+      <div id="clock" class="glass">3:30 PM</div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
