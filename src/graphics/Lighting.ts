@@ -69,7 +69,7 @@ export class LightManager {
       l.shadow.bias = -0.004;
       l.shadow.normalBias = 0.03;
       l.shadow.camera.near = 0.08;
-      l.shadow.camera.far = 12;
+      l.shadow.camera.far = 8;
       l.shadow.radius = 3;
       scene.add(l);
       this.shadowPool.push(l);
@@ -210,6 +210,28 @@ export class DayLight {
   /** 0 (night) .. 1 (full day) */
   daylight = 1;
   stars: THREE.Points;
+  /** half-size of the sun shadow frustum; it follows the player (sharper shadows, fewer casters) */
+  readonly shadowExtent = 14;
+  private followTarget = new THREE.Vector3();
+  private _m = new THREE.Matrix4();
+  private _mi = new THREE.Matrix4();
+  private _p = new THREE.Vector3();
+
+  /** Centre the sun's shadow frustum on a point, snapped to the shadow-map texel grid to avoid shimmer. */
+  follow(target: THREE.Vector3) {
+    const dir = this.sunDir;
+    // light-space basis
+    this._m.lookAt(new THREE.Vector3(0, 0, 0), dir.clone().negate(), new THREE.Vector3(0, 1, 0));
+    this._mi.copy(this._m).invert();
+    this._p.copy(target).applyMatrix4(this._mi);
+    const texel = (this.shadowExtent * 2) / this.sun.shadow.mapSize.x;
+    this._p.x = Math.round(this._p.x / texel) * texel;
+    this._p.y = Math.round(this._p.y / texel) * texel;
+    this.followTarget.copy(this._p).applyMatrix4(this._m);
+    this.sun.target.position.copy(this.followTarget);
+    this.sun.position.copy(this.followTarget).addScaledVector(dir, 45);
+    this.sun.target.updateMatrixWorld();
+  }
 
   constructor(private renderer: THREE.WebGLRenderer, private scene: THREE.Scene) {
     this.sky = new Sky();
@@ -226,9 +248,10 @@ export class DayLight {
     this.sun.shadow.mapSize.set(4096, 4096);
     this.sun.shadow.camera.near = 1;
     this.sun.shadow.camera.far = 90;
-    const S = 24;
+    const S = this.shadowExtent;
     this.sun.shadow.camera.left = -S; this.sun.shadow.camera.right = S;
     this.sun.shadow.camera.top = S; this.sun.shadow.camera.bottom = -S;
+    this.sun.shadow.camera.updateProjectionMatrix();
     this.sun.shadow.bias = -0.00015;
     this.sun.shadow.normalBias = 0.025;
     this.sun.shadow.radius = 1.5;
@@ -282,8 +305,8 @@ export class DayLight {
     this.daylight = daylight;
 
     this.sky.material.uniforms.sunPosition.value.copy(dir);
-    this.sun.position.copy(dir).multiplyScalar(45);
-    this.sun.target.position.set(0, 0, 0);
+    this.sun.position.copy(this.followTarget).addScaledVector(dir, 45);
+    this.sun.target.position.copy(this.followTarget);
     const warmth = 1 - Math.min(1, up / 0.35);
     this.sun.color.setRGB(1, 0.94 - warmth * 0.3, 0.86 - warmth * 0.5);
     this.sun.intensity = 2.6 * daylight * (0.35 + 0.65 * Math.min(1, up * 2));

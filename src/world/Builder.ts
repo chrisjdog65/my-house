@@ -73,6 +73,16 @@ function finishMesh(mesh: THREE.Mesh, material: THREE.Material, opts: MeshOpts) 
   return mesh;
 }
 
+/** Tessellation budget by feature size: tiny knobs don't need 24 segments. */
+function radialSegments(r: number, requested?: number): number {
+  const max = r < 0.02 ? 8 : r < 0.06 ? 12 : r < 0.15 ? 16 : r < 0.4 ? 24 : 40;
+  return Math.max(6, Math.min(requested ?? max, max));
+}
+function rboxSegments(minDim: number, requested?: number): number {
+  const max = minDim < 0.04 ? 1 : minDim < 0.15 ? 2 : 3;
+  return Math.max(1, Math.min(requested ?? max, Math.max(max, requested && minDim > 0.3 ? 4 : max)));
+}
+
 export const Prim = {
   /** Box centred at origin. */
   box(w: number, h: number, d: number, material: THREE.Material, opts: MeshOpts = {}): THREE.Mesh {
@@ -88,19 +98,19 @@ export const Prim = {
   /** Rounded box (bevelled edges) centred at origin. */
   rbox(w: number, h: number, d: number, radius: number, material: THREE.Material, opts: MeshOpts & { segments?: number } = {}): THREE.Mesh {
     const r = Math.min(radius, w / 2, h / 2, d / 2);
-    const g = new RoundedBoxGeometry(w, h, d, opts.segments ?? 3, r);
+    const g = new RoundedBoxGeometry(w, h, d, rboxSegments(Math.min(w, h, d), opts.segments), r);
     return finishMesh(new THREE.Mesh(g, material), material, opts);
   },
   /** Rounded box with bottom at y=0 */
   rboxUp(w: number, h: number, d: number, radius: number, material: THREE.Material, opts: MeshOpts & { segments?: number } = {}): THREE.Mesh {
     const r = Math.min(radius, w / 2, h / 2, d / 2);
-    const g = new RoundedBoxGeometry(w, h, d, opts.segments ?? 3, r);
+    const g = new RoundedBoxGeometry(w, h, d, rboxSegments(Math.min(w, h, d), opts.segments), r);
     g.translate(0, h / 2, 0);
     return finishMesh(new THREE.Mesh(g, material), material, opts);
   },
   /** Cylinder along Y, centred. */
   cylinder(rTop: number, rBottom: number, h: number, material: THREE.Material, opts: MeshOpts & { segments?: number; open?: boolean } = {}): THREE.Mesh {
-    const g = new THREE.CylinderGeometry(rTop, rBottom, h, opts.segments ?? 24, 1, opts.open ?? false);
+    const g = new THREE.CylinderGeometry(rTop, rBottom, h, radialSegments(Math.max(rTop, rBottom), opts.segments), 1, opts.open ?? false);
     const m = new THREE.Mesh(g, material);
     m.castShadow = opts.cast ?? true; m.receiveShadow = opts.receive ?? true;
     const ts = material.userData?.texSize;
@@ -115,7 +125,8 @@ export const Prim = {
     return m;
   },
   sphere(r: number, material: THREE.Material, opts: MeshOpts & { segments?: number } = {}): THREE.Mesh {
-    const g = new THREE.SphereGeometry(r, opts.segments ?? 24, Math.max(8, Math.round((opts.segments ?? 24) * 0.66)));
+    const segs = radialSegments(r, opts.segments);
+    const g = new THREE.SphereGeometry(r, segs, Math.max(6, Math.round(segs * 0.66)));
     const m = new THREE.Mesh(g, material);
     m.castShadow = opts.cast ?? true; m.receiveShadow = opts.receive ?? true;
     const ts = material.userData?.texSize;
@@ -133,7 +144,8 @@ export const Prim = {
   },
   /** Lathe (profile of [radius, y] points) */
   lathe(points: [number, number][], material: THREE.Material, opts: MeshOpts & { segments?: number } = {}): THREE.Mesh {
-    const g = new THREE.LatheGeometry(points.map((p) => new THREE.Vector2(p[0], p[1])), opts.segments ?? 32);
+    const maxR0 = Math.max(...points.map((p) => p[0]));
+    const g = new THREE.LatheGeometry(points.map((p) => new THREE.Vector2(p[0], p[1])), radialSegments(maxR0, opts.segments ?? 32));
     const m = new THREE.Mesh(g, material);
     m.castShadow = opts.cast ?? true; m.receiveShadow = opts.receive ?? true;
     const ts = material.userData?.texSize;
@@ -171,7 +183,8 @@ export const Prim = {
   },
   /** Torus centred, axis along Y. */
   torus(r: number, tube: number, material: THREE.Material, opts: MeshOpts & { arc?: number } = {}): THREE.Mesh {
-    const g = new THREE.TorusGeometry(r, tube, 12, 32, opts.arc ?? Math.PI * 2);
+    const tubular = radialSegments(r);
+    const g = new THREE.TorusGeometry(r, tube, r < 0.05 ? 6 : r < 0.15 ? 8 : 12, tubular, opts.arc ?? Math.PI * 2);
     g.rotateX(Math.PI / 2);
     const m = new THREE.Mesh(g, material);
     m.castShadow = opts.cast ?? true; m.receiveShadow = opts.receive ?? true;
@@ -266,8 +279,45 @@ export class StaticBatch {
   private groups = new Map<string, { material: THREE.Material; geometries: THREE.BufferGeometry[]; cast: boolean; receive: boolean }>();
   private built: THREE.Mesh[] = [];
   private count = 0;
+  /** master materials (vertex-coloured) keyed by every material property except `color` */
+  private masters = new Map<string, THREE.Material>();
+  private masterOf = new Map<THREE.Material, { master: THREE.Material; color: THREE.Color } | null>();
 
   constructor(readonly root: THREE.Object3D) {}
+
+  /**
+   * Materials that differ only by `color` are folded into one vertex-coloured master material so
+   * hundreds of differently tinted solids/fabrics/woods become a single draw call each.
+   */
+  private resolveMaster(mat: THREE.Material): { master: THREE.Material; color: THREE.Color } | null {
+    const cached = this.masterOf.get(mat);
+    if (cached !== undefined) return cached;
+    let result: { master: THREE.Material; color: THREE.Color } | null = null;
+    if ((mat instanceof THREE.MeshStandardMaterial) && !mat.vertexColors && !(mat as any).isShaderMaterial) {
+      const m = mat as THREE.MeshPhysicalMaterial;
+      const tid = (t: THREE.Texture | null | undefined) => (t ? t.uuid : '-');
+      const key = JSON.stringify([
+        m.type, tid(m.map), tid(m.normalMap), tid(m.roughnessMap), tid(m.metalnessMap), tid(m.aoMap), tid(m.emissiveMap), tid(m.alphaMap),
+        m.roughness, m.metalness, m.envMapIntensity, m.side, m.transparent, m.opacity, m.depthWrite, m.alphaTest, m.flatShading,
+        m.emissive.getHex(), m.emissiveIntensity, m.normalScale.x, m.normalScale.y, m.aoMapIntensity, m.wireframe,
+        m.isMeshPhysicalMaterial ? [m.clearcoat, m.clearcoatRoughness, m.sheen, m.sheenColor?.getHex(), m.sheenRoughness, m.transmission, m.ior, m.thickness, m.reflectivity] : null,
+        mat.userData?.texSize, mat.userData?.texSizeV, mat.userData?.rotate,
+      ]);
+      let master = this.masters.get(key);
+      if (!master) {
+        const clone = mat.clone() as THREE.MeshStandardMaterial;
+        clone.color.set(0xffffff);
+        clone.vertexColors = true;
+        clone.name = 'batch:' + (mat.name || mat.type);
+        clone.userData = { ...mat.userData };
+        master = clone;
+        this.masters.set(key, master);
+      }
+      result = { master, color: (mat as THREE.MeshStandardMaterial).color.clone() };
+    }
+    this.masterOf.set(mat, result);
+    return result;
+  }
 
   /**
    * Add a mesh (or a group of meshes) to the batch. The object's current world transform is used.
@@ -283,7 +333,7 @@ export class StaticBatch {
       if (mats.length !== 1) { this.addUnbatched(mesh); return; }
       const mat = mats[0];
       const g = mesh.geometry.clone();
-      // drop attributes that would prevent merging
+      // drop attributes that would prevent merging (colour is regenerated per material below)
       for (const name of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(name)) g.deleteAttribute(name);
       if (!g.attributes.normal) g.computeVertexNormals();
       if (!g.attributes.uv) metricUV(g, mat.userData?.texSize || 1);
@@ -291,18 +341,32 @@ export class StaticBatch {
         metricUV(g, mat.userData.texSize, mat.userData.texSizeV ?? mat.userData.texSize, mesh.matrixWorld, !!mat.userData.rotate);
       }
       g.applyMatrix4(mesh.matrixWorld);
+      let out = g;
       if (g.index) {
         // non-indexed for easy merging with mixed geometries
-        const ni = g.toNonIndexed();
+        out = g.toNonIndexed();
         g.dispose();
-        this.push(mat, ni, mesh.castShadow, mesh.receiveShadow);
+      }
+      const resolved = this.resolveMaster(mat);
+      if (resolved) {
+        const n = out.attributes.position.count;
+        const col = new Float32Array(n * 3);
+        const { r, g: cg, b } = resolved.color;
+        for (let i = 0; i < n; i++) { col[i * 3] = r; col[i * 3 + 1] = cg; col[i * 3 + 2] = b; }
+        out.setAttribute('color', new THREE.BufferAttribute(col, 3));
+        this.push(resolved.master, out, mesh.castShadow, mesh.receiveShadow);
       } else {
-        this.push(mat, g, mesh.castShadow, mesh.receiveShadow);
+        this.push(mat, out, mesh.castShadow, mesh.receiveShadow);
       }
     });
   }
 
   private push(material: THREE.Material, g: THREE.BufferGeometry, cast: boolean, receive: boolean) {
+    // geometry without a colour attribute merged into a vertex-coloured master gets white
+    if ((material as THREE.MeshStandardMaterial).vertexColors && !g.attributes.color) {
+      const n = g.attributes.position.count;
+      g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n * 3).fill(1), 3));
+    }
     const key = material.uuid + (cast ? ':c' : '') + (receive ? ':r' : '');
     let grp = this.groups.get(key);
     if (!grp) { grp = { material, geometries: [], cast, receive }; this.groups.set(key, grp); }

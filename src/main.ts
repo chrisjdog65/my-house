@@ -199,6 +199,7 @@ async function main() {
     }
     // lights follow the camera focus (player) even when paused so menus look right
     lights.update(dt, player.position, daylight.daylight);
+    daylight.follow(player.position);
     // flashlight
     flashlight.intensity += ((flashOn ? 40 : 0) - flashlight.intensity) * (1 - Math.exp(-dt * 12));
     if (flashlight.intensity > 0.01) {
@@ -212,9 +213,11 @@ async function main() {
     if (frameCount === 6) {
       window.__ready = true;
     }
+    // screenshot tooling: stop rendering once the capture frame is on screen (saves CPU on the QA box)
+    if (frameCount === 8 && params.has('freeze')) engine.stop();
   });
   // stats hook for QA tooling
-  window.__game = { engine, player, camera, physics, ctx, world, settings, ui, teleport: (x: number, y: number, z: number, yaw = 0) => player.setPosition(new THREE.Vector3(x, y, z), yaw) };
+  window.__game = { engine, player, camera, physics, ctx, world, settings, ui, roomAt, teleport: (x: number, y: number, z: number, yaw = 0) => player.setPosition(new THREE.Vector3(x, y, z), yaw) };
   Object.defineProperty(window, '__stats', { get: () => ({ calls: engine.lastStats.calls, triangles: engine.lastStats.triangles, fps: engine.fps, errors: window.__errors, batches: batch.stats, interactables: interact.items.length, lights: lights.virtual.length }) });
   engine.start();
 }

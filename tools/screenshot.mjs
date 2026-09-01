@@ -12,6 +12,7 @@
 const pw = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const { chromium } = pw;
 import fs from 'node:fs';
+import { acquireCaptureLock } from './lock.mjs';
 import path from 'node:path';
 
 const args = process.argv.slice(2);
@@ -68,6 +69,7 @@ const SHOTS = {
 
 async function main() {
   fs.mkdirSync(OUT, { recursive: true });
+  const releaseLock = await acquireCaptureLock('screenshot ' + (ONLY.join(',') || 'all'));
   // Persistent profile so the IndexedDB texture cache survives between runs (much faster captures).
   // A template profile is cloned per run so several harness processes can run concurrently.
   const os = await import('node:os');
@@ -102,7 +104,7 @@ async function main() {
     list.push([name, rest.split(',').map(Number)]);
   }
   for (const [name, [x, y, z, yaw, cyaw, cpitch, dist, t]] of list) {
-    const p = new URLSearchParams({ auto: '1', nolock: '1', x: String(x), y: String(y), z: String(z), yaw: String(yaw), cyaw: String(cyaw), cpitch: String(cpitch), dist: String(dist), q: QUALITY });
+    const p = new URLSearchParams({ auto: '1', nolock: '1', freeze: '1', x: String(x), y: String(y), z: String(z), yaw: String(yaw), cyaw: String(cyaw), cpitch: String(cpitch), dist: String(dist), q: QUALITY });
     p.set('t', String(TIME || t || 15.5));
     const url = `${URL_BASE}/?${p}`;
     const t0 = Date.now();
@@ -138,6 +140,9 @@ async function main() {
   }
   fs.writeFileSync(path.join(OUT, 'results.json'), JSON.stringify(results, null, 2));
   await browser.close();
+  releaseLock();
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
+// never leave a headless browser behind
+setTimeout(() => { console.error('capture run exceeded 40 minutes; aborting'); process.exit(2); }, 40 * 60 * 1000).unref();

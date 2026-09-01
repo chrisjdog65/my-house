@@ -70,6 +70,12 @@ plus `solid(color, {roughness, metalness, clearcoat, sheen, opacity, ...})`, `em
 5. **Detail**: bevel edges (`rbox`), add small objects (cups, books, remotes, cushions, towels), vary colours with `ctx.rng()`.
 6. **Interactions**: each room should have several — lamps, switches, appliances with hinged doors, pickups, toggles with sound.
 7. **Performance**: reuse `ctx.mats.*`; avoid per-object `new THREE.MeshStandardMaterial`; prefer boxes/lathes over high-poly spheres.
+   The static batch folds materials that differ only by colour into one vertex-coloured draw call, so colour variety is free —
+   but every mesh left in `ctx.dynamic` costs a draw call in *every* pass (main, sun shadow, point shadow ×6, AO). Rules:
+   - Only the parts that actually move or change material go in `ctx.dynamic`; the rest of the same object goes through `addStatic`.
+   - Compound dynamic objects (appliance + hinged door, lamp base + shade) must be collapsed with `mergeByMaterial` — aim for ≤ 3 meshes per object.
+   - Budget: ≤ 40 dynamic meshes per room, ≤ 1.5k triangles per dynamic object. `node tools/perf.mjs --room <id>` lists the offenders.
+   - `Prim` already clamps tessellation by size (tiny knobs get 8 segments, small bevels 1 subdivision) — don't pass large `segments` for small parts.
 8. **Check**: `npx tsc --noEmit` must pass. Capture your room with
    `node tools/screenshot.mjs --url http://127.0.0.1:5173 --out shots/<room> --only <shotNames> --w 1024 --h 576` and look at the PNGs.
    Custom views: `--custom "name:x,y,z,playerYaw,camYaw,camPitch,dist"` (camera sits at pivot + (sin camYaw, ·, cos camYaw) × dist and looks back).

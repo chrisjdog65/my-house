@@ -7,9 +7,11 @@
  */
 const pw = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const { chromium } = pw;
+import { acquireCaptureLock } from './lock.mjs';
 const args = process.argv.slice(2);
 const get = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const URL_BASE = get('--url', 'http://127.0.0.1:5173');
+const releaseLock = await acquireCaptureLock('smoke');
 
 const browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const context = await browser.newContext({ viewport: { width: 800, height: 450 } });
@@ -92,4 +94,5 @@ try {
   check('smoke test ran', false, String(e.message || e));
 }
 await browser.close();
+releaseLock();
 process.exit(results.every((r) => r.ok) ? 0 : 1);
