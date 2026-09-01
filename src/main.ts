@@ -207,6 +207,12 @@ async function main() {
       flashlight.position.copy(chest);
       flashlight.target.position.copy(chest.clone().addScaledVector(camDir, 6));
     }
+    // optional day/night cycle: one game hour per real minute
+    if (settings.get('dayCycle') && playing) {
+      settings.data.timeOfDay = (settings.data.timeOfDay + dt / 60) % 24;
+      daylight.setTime(settings.data.timeOfDay);
+      if (frameCount % 600 === 0) settings.set('timeOfDay', Math.round(settings.data.timeOfDay * 10) / 10);
+    }
     ui.setClock(settings.get('timeOfDay'));
     input.endFrame();
     frameCount++;

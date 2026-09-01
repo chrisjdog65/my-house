@@ -221,7 +221,7 @@ export function tableLamp(ctx: Ctx, x: number, y: number, z: number, opts: { gro
   const base = Prim.lathe([[0.0, 0], [0.09, 0], [0.09, 0.02], [0.05, 0.04], [0.045, h * 0.45], [0.06, h * 0.5], [0.03, h * 0.55], [0.015, h * 0.7], [0.0, h * 0.7]], mats.solid(opts.color ?? 0x3d5a6c, { roughness: 0.3, metalness: 0.2, envMapIntensity: 0.8 }));
   base.userData.base = true;
   g.add(base);
-  const shadeMat = mats.solid(opts.shadeColor ?? 0xf3e9d2, { roughness: 0.9, side: THREE.DoubleSide, transparent: true, opacity: 0.96 });
+  const shadeMat = mats.solid(opts.shadeColor ?? 0xe9dcc0, { roughness: 0.95, side: THREE.DoubleSide, envMapIntensity: 0.2 });
   const shade = Prim.lathe([[0.1, h * 0.62], [0.16, h * 0.62], [0.13, h + 0.04], [0.09, h + 0.04]], shadeMat);
   g.add(shade);
   const bulbs = bulbMaterials(ctx, 0xffdcae, 1.2);
@@ -246,7 +246,7 @@ export function floorLamp(ctx: Ctx, x: number, y: number, z: number, opts: { gro
   const pole = Prim.cylinder(0.012, 0.012, 1.5, mats.darkMetal);
   pole.position.y = 0.76;
   g.add(pole);
-  const shade = Prim.lathe([[0.14, 1.45], [0.2, 1.45], [0.17, 1.75], [0.12, 1.75]], mats.solid(0xf0e6cf, { roughness: 0.9, side: THREE.DoubleSide, transparent: true, opacity: 0.96 }));
+  const shade = Prim.lathe([[0.14, 1.45], [0.2, 1.45], [0.17, 1.75], [0.12, 1.75]], mats.solid(0xe9dcc0, { roughness: 0.95, side: THREE.DoubleSide, envMapIntensity: 0.2 }));
   g.add(shade);
   const bulbs = bulbMaterials(ctx, 0xffdcae, 1.2);
   const bulb = Prim.sphere(0.03, bulbs.on, { cast: false });

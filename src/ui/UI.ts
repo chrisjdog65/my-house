@@ -101,6 +101,7 @@ export class UI {
     bindCheck('s-bloom', 'bloom');
     bindCheck('s-aa', 'antialias');
     bindCheck('s-fps', 'showFps');
+    bindCheck('s-cycle', 'dayCycle');
     bindCheck('s-invert', 'invertY');
     bindCheck('s-bob', 'headBob');
     this.syncSettings();
@@ -121,6 +122,7 @@ export class UI {
     $<HTMLInputElement>('s-bloom').checked = d.bloom;
     $<HTMLInputElement>('s-aa').checked = d.antialias;
     $<HTMLInputElement>('s-fps').checked = d.showFps;
+    $<HTMLInputElement>('s-cycle').checked = d.dayCycle;
     $<HTMLInputElement>('s-invert').checked = d.invertY;
     $<HTMLInputElement>('s-bob').checked = d.headBob;
   }

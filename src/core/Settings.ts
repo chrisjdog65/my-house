@@ -14,6 +14,7 @@ export interface SettingsData {
   sensitivity: number; // 0.2..3
   invertY: boolean;
   timeOfDay: number; // 0..24 hours
+  dayCycle: boolean; // advance time automatically
   showFps: boolean;
   volume: number; // 0..1
   cameraDistance: number; // preferred third-person distance
@@ -31,6 +32,7 @@ const DEFAULTS: SettingsData = {
   sensitivity: 1,
   invertY: false,
   timeOfDay: 15.5,
+  dayCycle: false,
   showFps: false,
   volume: 0.7,
   cameraDistance: 3.6,

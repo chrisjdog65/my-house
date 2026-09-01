@@ -41,7 +41,7 @@ export class PostFX {
       screenSpaceRadius: false,
     });
     this.gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 4, radiusExponent: 1, rings: 2, samples: 16 });
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.16, 0.35, 1.25);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.12, 0.3, 1.35);
     this.smaa = new SMAAPass();
     this.output = new OutputPass();
 
