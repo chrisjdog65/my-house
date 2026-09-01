@@ -97,14 +97,22 @@ export class Fire {
   private emberMat: THREE.ShaderMaterial;
   private time = 0;
 
-  constructor(private ctx: Ctx, position: THREE.Vector3, opts: { width?: number; height?: number; embers?: number } = {}) {
-    const w = opts.width ?? 0.5, h = opts.height ?? 0.42;
+  /**
+   * `width` is the extent along z (the quad facing +x, i.e. the room), `depth` the extent along x
+   * (into the firebox); the diagonal quads are sized to the ellipse between the two so no sheet
+   * pokes out of the firebox opening.
+   */
+  constructor(private ctx: Ctx, position: THREE.Vector3, opts: { width?: number; depth?: number; height?: number; embers?: number } = {}) {
+    const w = opts.width ?? 0.5, d = opts.depth ?? w, h = opts.height ?? 0.42;
     // crossed billboard quads (0 / 45 / 90 / 135 degrees) with a per-quad phase so they don't move in lockstep
     const geos: THREE.BufferGeometry[] = [];
     for (let i = 0; i < 4; i++) {
-      const g = new THREE.PlaneGeometry(w * (i % 2 ? 0.85 : 1), h * (i % 2 ? 0.9 : 1), 1, 1);
+      const a = (i * Math.PI) / 4;
+      // half extent of a quad spanning direction (cos a, 0, -sin a) inside the (d x w) ellipse
+      const half = 1 / Math.sqrt((Math.cos(a) / (d / 2)) ** 2 + (Math.sin(a) / (w / 2)) ** 2);
+      const g = new THREE.PlaneGeometry(half * 2, h * (i % 2 ? 0.9 : 1), 1, 1);
       g.translate(0, (h * (i % 2 ? 0.9 : 1)) / 2, 0);
-      g.rotateY((i * Math.PI) / 4);
+      g.rotateY(a);
       const phase = new Float32Array(g.attributes.position.count).fill(i * 0.37);
       g.setAttribute('aPhase', new THREE.BufferAttribute(phase, 1));
       geos.push(g);
@@ -131,7 +139,7 @@ export class Fire {
     const n = opts.embers ?? 70;
     const pos = new Float32Array(n * 3), seed = new Float32Array(n), vel = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * w * 0.5;
+      pos[i * 3] = (Math.random() - 0.5) * d * 0.5;
       pos[i * 3 + 1] = Math.random() * 0.06;
       pos[i * 3 + 2] = (Math.random() - 0.5) * w * 0.5;
       seed[i] = Math.random();

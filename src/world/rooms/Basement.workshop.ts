@@ -936,13 +936,11 @@ export function buildWorkshop(ctx: Ctx, power: BasementPower) {
       d.position.set(x, 0.002, z);
       g.add(d);
     }
-    addStatic(ctx, g, [
+    placeStatic(ctx, g, 0, 0, 0, [
       { size: [0.16, 0.5, 0.16], center: [1.64, 1.25, 1.25] },
       { size: [0.35, 2.4, 1.3], center: [7.45, 1.2, 1.8] },
       { size: [0.4, 0.45, 0.4], center: [6.2, 0.22, 5.4] },
-    ], { surface: 'wood' });
-    g.position.y = y0;
-    g.updateWorldMatrix(true, true);
+    ], 'wood');
   }
 
   pictureFrame(ctx, 3.4, y0 + 1.6, -0.93, 0, 0.7, 0.5,

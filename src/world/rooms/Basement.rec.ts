@@ -295,7 +295,7 @@ export function buildRecRoom(ctx: Ctx, power: BasementPower) {
       spk.position.set(-7.74, 0.65, z);
       g.add(spk);
     }
-    placeStatic(ctx, g, 0, 0, 0, [{ size: [0.5, 0.6, 1.85], center: [-7.6, 0.3, 4.0] }], 'wood');
+    placeStatic(ctx, g, 0, 0, 0, [{ size: [0.5, 0.53, 1.85], center: [-7.6, 0.265, 4.0] }, { size: [0.1, 0.07, 0.96], center: [-7.62, 0.565, 4.0] }], 'wood');
 
     const screen = new AnimatedScreen(ctx, 512, 288, drawSports, 12);
     const onMat = imageMat(ctx, screen.tex, { emissive: 0xffffff, emissiveIntensity: 0.85, roughness: 0.3 });
@@ -315,7 +315,7 @@ export function buildRecRoom(ctx: Ctx, power: BasementPower) {
     power.listeners.push((on) => { if (!on) tv.set(false); });
 
     // controllers (pickups) on the console top
-    for (const [z, col] of [[3.45, 0x1a1a1c], [3.75, 0xf0f0ec]] as [number, number][]) {
+    for (const [z, col] of [[3.22, 0x1a1a1c], [3.5, 0xf0f0ec]] as [number, number][]) {
       const cg = new THREE.Group();
       const bodyM = m.solid(col, { roughness: 0.45 });
       const b = Prim.rbox(0.1, 0.035, 0.15, 0.015, bodyM);
@@ -328,14 +328,14 @@ export function buildRecRoom(ctx: Ctx, power: BasementPower) {
         stick.position.set(-0.01, 0.022, s * 0.03);
         cg.add(stick);
       }
-      cg.position.set(-7.6, y0 + 0.51 + 0.02, z);
-      cg.rotation.y = rng() * 0.6;
+      cg.position.set(-7.49, y0 + 0.53 + 0.022, z);
+      cg.rotation.y = (rng() - 0.5) * 0.3;
       pickup(ctx, mergeByMaterial(cg), { name: 'game controller', mass: 0.25, shape: { type: 'box', size: new THREE.Vector3(0.11, 0.04, 0.2) } });
     }
   }
 
   // ------------------------------------------------------------------ coffee table + snacks + rug + end table
-  rug(ctx, -6.3, y0, 4.05, 3.3, 3.5, 'neutral');
+  rug(ctx, -6.25, y0, 4.05, 3.0, 3.4, 'neutral');
   {
     const g = new THREE.Group();
     const top = Prim.rbox(0.6, 0.04, 1.1, 0.01, m.walnut);
@@ -403,7 +403,7 @@ export function buildRecRoom(ctx: Ctx, power: BasementPower) {
     const books = Prim.box(0.24, 0.09, 0.18, m.image(ctx.tex.bookRow(7), { roughness: 0.7 }), { keepUV: true });
     books.position.set(0, 0.205, 0);
     g.add(books);
-    placeStatic(ctx, g, -5.15, 2.1, 0.1, [{ size: [0.47, 0.57, 0.47], center: [0, 0.285, 0] }], 'wood');
+    placeStatic(ctx, g, -5.15, 2.1, 0.1, [{ size: [0.47, 0.565, 0.47], center: [0, 0.2825, 0] }], 'wood');
     sodaCan(ctx, -5.05, y0 + 0.565, 2.2, 0x27ae60);
   }
 
@@ -526,7 +526,7 @@ export function buildRecRoom(ctx: Ctx, power: BasementPower) {
       { size: [1.42, 0.05, 0.12], center: [0, 0.805, 1.21] },
     ], 'wood');
     // balls
-    const by = y0 + 0.785 + BALL_R;
+    const by = y0 + 0.79 + BALL_R + 0.002;
     const rack = [[1], [9, 2], [10, 8, 3], [11, 7, 14, 4], [5, 13, 15, 6, 12]];
     const apexZ = TZ - 0.6;
     rack.forEach((row, r) => row.forEach((num, i) => {
@@ -596,9 +596,9 @@ export function buildRecRoom(ctx: Ctx, power: BasementPower) {
     }
     tri.position.set(-0.012, 1.6, -0.55);
     g.add(tri);
-    placeStatic(ctx, g, -1.56, -1.65, 0, [{ size: [0.14, 1.0, 0.36], center: [-0.05, 1.5, 0] }], 'wood');
+    placeStatic(ctx, g, -1.56, -1.65, 0, [{ size: [0.06, 1.0, 0.36], center: [-0.02, 1.5, 0] }], 'wood');
     const chalk = Prim.rbox(0.024, 0.022, 0.024, 0.003, m.solid(0x2a5fb8, { roughness: 0.95 }));
-    chalk.position.set(-1.62, y0 + 1.222, -1.72);
+    chalk.position.set(-1.655, y0 + 1.223, -1.72);
     pickup(ctx, chalk, { name: 'cue chalk', mass: 0.05, shape: { type: 'box', size: new THREE.Vector3(0.024, 0.022, 0.024) } });
   }
 
@@ -736,7 +736,7 @@ export function buildRecRoom(ctx: Ctx, power: BasementPower) {
     neon.position.set(-6.7, y0 + 2.12, -5.8);
     ctx.dynamic.add(neon);
     attach(lightC, neon, neonOn, neonOff);
-    put(Prim.rbox(0.98, 0.5, 0.016, 0.006, m.solid(0x15171a, { roughness: 0.6 })), -6.7, 2.29, -5.84);
+    put(Prim.rbox(0.98, 0.5, 0.016, 0.006, m.solid(0x15171a, { roughness: 0.6 })), -6.7, 2.31, -5.838);
     // a couple of framed things on the smoked panel? keep it clean. Bar mat on the counter:
     put(Prim.rbox(0.5, 0.008, 0.2, 0.003, bm.rubber), -6.5, 1.064, -4.4);
     placeStatic(ctx, g, 0, 0, 0, [
@@ -977,7 +977,7 @@ export function buildRecRoom(ctx: Ctx, power: BasementPower) {
     pennant(-2.4, 0x1f7a3a, 0xf4f1e6, -0.25);
     placeStatic(ctx, g, -1.56, 0, 0, [], 'fabric');
   }
-  floorLamp(ctx, -7.5, y0, 5.45, { group: GROUP });
+  floorLamp(ctx, -7.55, y0, 2.35, { group: GROUP });
   floorLamp(ctx, -2.0, y0, 5.45, { group: GROUP });
   lightSwitch(ctx, -1.56, y0 + 1.2, 2.55, -Math.PI / 2, GROUP);
 }

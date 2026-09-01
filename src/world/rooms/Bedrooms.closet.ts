@@ -95,7 +95,7 @@ export function buildCloset2(ctx: Ctx) {
   const W = 5.06, E = 7.85, S = -1.44, N = 1.44; // wall faces (S = office wall, N = guest room wall)
 
   ceilingDome(ctx, 6.5, CEIL, 0.05, 'closet2');
-  lightSwitch(ctx, 7.08, y + 1.2, S, FACE.posZ, 'closet2', 'closet light');
+  lightSwitch(ctx, 5.92, y + 1.2, S, FACE.posZ, 'closet2', 'closet light'); // latch side (door hinges at x=6.9)
 
   // ---- shelving along the west wall, bins on it ----------------------------------------------------
   const levels = [0.12, 0.6, 1.1, 1.6, 2.05];
@@ -154,7 +154,7 @@ export function buildCloset2(ctx: Ctx) {
 
   // ---- floor items -----------------------------------------------------------------------------------
   vacuumCleaner(ctx, 7.45, -1.05, FACE.negX + 0.4);
-  ironingBoard(ctx, E - 0.1, 0.85, FACE.negX);
+  ironingBoard(ctx, E - 0.17, 0.85, FACE.negX); // leans back 0.13 at the top, so keep the base off the wall
   stepStool(ctx, 5.75, -1.05, FACE.posZ + 0.3);
   // laundry basket with towels under the frosted window
   {

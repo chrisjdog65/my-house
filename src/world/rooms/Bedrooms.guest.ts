@@ -235,7 +235,7 @@ export function buildGuestRoom(ctx: Ctx) {
   // ---- west wall: armoire, painting, dresser + mirror -------------------------------------------
   armoire(ctx, W + 0.02 + 0.32, 2.25, FACE.posX);
   pictureFrame(ctx, W, y + 1.55, 3.05, FACE.posX, 0.5, 0.65, ctx.tex.art(4, 0.77), { frameColor: 0xd8d0c0, frameW: 0.035 });
-  dresserWithMirror(ctx, W + 0.02 + 0.26, 5.25, FACE.posX);
+  dresserWithMirror(ctx, W + 0.02 + 0.28, 5.25, FACE.posX); // +0.28: the mirror frame sits 0.27 behind the body centre
 
   // ---- east / front corner: reading chair, side table, plant, luggage rack --------------------
   armchair(ctx, 7.05, 5.05, -Math.PI * 0.72, 0x7c8b6f);

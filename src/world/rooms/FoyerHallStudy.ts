@@ -77,25 +77,29 @@ function buildFoyer(ctx: Ctx) {
   P.stat(ctx, stand);
   ctx.physics.addCylinder({ x: eastX - 0.15, y: y0 + 0.28, z: 5.12 }, 0.13, 0.56, { meta: { surface: 'metal' } });
 
-  // coat hooks west of the front door: two coats, a scarf and a hat, with a shoe bench beneath
-  const railX = -0.98, railLen = 0.7;
+  // coat hooks west of the front door (clear of the open leaf, which lies along x ≈ -0.55): a hat on the
+  // hook nearest the door, two coats, a tote bag, with a shoe bench beneath
+  const railX = -0.98, railLen = 0.66;
   const rail = P.hookRail(ctx, railLen, 4);
   place(rail, railX, y0 + 1.72, frontZ - 0.002, Math.PI);
   P.stat(ctx, rail);
-  const hookX = (i: number) => railX - (-railLen / 2 + 0.08 + (i / 3) * (railLen - 0.16)); // rotY = PI flips local x
-  const hookZ = frontZ - 0.002 - 0.08;
+  const hookX = (i: number) => railX - (-railLen / 2 + 0.08 + (i / 3) * (railLen - 0.16)); // rotY = PI flips local x: -0.73, -0.90, -1.06, -1.23
+  const hookZ = frontZ - 0.002 - 0.08; // hook tips
+  const hat = P.fedora(ctx, 0x4a3f36);
+  place(hat, hookX(0), y0 + 1.66, frontZ - 0.03);
+  hat.rotation.set(-Math.PI / 2, 0, 0.12);
+  P.stat(ctx, hat);
   const coatA = P.coat(ctx, 0x2b3a55, { scarf: 0x9b2f2f });
-  place(coatA, hookX(0), y0 + 1.725, hookZ + 0.005, Math.PI + 0.12);
+  place(coatA, hookX(1), y0 + 1.725, hookZ + 0.005, Math.PI + 0.1);
   coatA.rotation.z = 0.04;
   P.stat(ctx, coatA);
   const coatB = P.coat(ctx, 0xb08a5a, { buttons: 0x4a3626 });
-  place(coatB, hookX(2), y0 + 1.725, hookZ + 0.005, Math.PI - 0.18);
-  coatB.rotation.z = -0.03;
+  place(coatB, hookX(3), y0 + 1.725, hookZ + 0.005, Math.PI - 0.22);
+  coatB.rotation.z = 0.03; // hem swings away from the west wall
   P.stat(ctx, coatB);
-  const hat = P.fedora(ctx, 0x4a3f36);
-  place(hat, hookX(3), y0 + 1.66, frontZ - 0.03);
-  hat.rotation.set(-Math.PI / 2, 0, 0.12);
-  P.stat(ctx, hat);
+  const tote = P.toteBag(ctx, 0xd8cdb4, 0x2b3a55);
+  place(tote, hookX(2), y0 + 1.725, hookZ, Math.PI + 0.05); // straps on the hook, bag hanging out in front of the coats
+  P.stat(ctx, tote);
   const bW = 0.72, bD = 0.34;
   const bench = P.shoeBench(ctx, bW, bD, 0.45, 0x6f5a48);
   place(bench, -1.03, y0, frontZ - bD / 2 - 0.02, Math.PI);
@@ -112,7 +116,7 @@ function buildFoyer(ctx: Ctx) {
 
   // rug, plant in the corner between the two living-room arches
   rug(ctx, 0, y0, 3.8, 1.1, 1.7, 'blue');
-  plant(ctx, westX + 0.27, y0, 2.72, 1.15, { potColor: 0x4a4a48 });
+  plant(ctx, westX + 0.36, y0, 2.72, 1.15, { potColor: 0x4a4a48 });
 
   // gallery wall on the east wall (shared with the hall) with a slim console beneath
   const gallery: [number, number, number, number, number][] = [
@@ -226,8 +230,9 @@ function buildStudy(ctx: Ctx) {
   curtains(ctx, 6.75, y0, northZ, Math.PI, 1.0, 2.3, curtainColor);
   curtains(ctx, eastX, y0, 4.25, -Math.PI / 2, 1.6, 2.3, curtainColor);
 
-  // ---- wall-to-wall bookcase on the south wall
-  const bcW = 5.65, bcH = 2.3, bcD = 0.32;
+  // ---- wall-to-wall bookcase on the south wall (stops 0.6 m short of the east wall so the window curtain
+  // and the archive corner have room)
+  const bcW = 5.6, bcH = 2.3, bcD = 0.32;
   const bcX = westX + 0.04 + bcW / 2, bcZ = southZ + bcD / 2;
   const shelfTops = [0.08, 0.5, 0.92, 1.34, 1.76];
   const bc = P.bookcase(ctx, bcW, bcH, bcD, 5, shelfTops.slice(1), mats.mahogany);
@@ -267,33 +272,43 @@ function buildStudy(ctx: Ctx) {
   place(G, bcX, y0, bcZ, 0);
   addStatic(ctx, G, [{ size: [bcW + 0.06, bcH + 0.06, bcD + 0.04], center: [0, (bcH + 0.06) / 2, 0.01] }]);
 
-  // ---- executive desk facing the room, chair behind it in front of the east window
-  const desk = P.executiveDesk(ctx, 1.8, 0.85, 0.75);
-  place(desk, 6.0, y0, 4.25, -Math.PI / 2);
-  addStatic(ctx, desk, [{ size: [1.8, 0.75, 0.85], center: [0, 0.375, 0] }]);
-  const deskTop = y0 + 0.75;
-  P.monitor(ctx, 6.12, deskTop, 4.35, Math.PI / 2, 'study');
-  const kb = P.keyboard(ctx); place(kb, 6.31, deskTop, 4.35, Math.PI / 2); P.stat(ctx, kb);
-  const ms = P.mouse(ctx); place(ms, 6.32, deskTop, 4.02, Math.PI / 2 + 0.2); P.stat(ctx, ms);
-  mug(ctx, 6.3, deskTop, 4.72, 0x2f4a3a);
-  tableLamp(ctx, 5.78, deskTop, 3.62, { shadeColor: 0x2e6b40, color: 0xb08d3c, height: 0.42, label: 'desk lamp' });
-  const phone = P.deskPhone(ctx); place(phone, 5.84, deskTop, 4.0, Math.PI / 2 - 0.35); P.stat(ctx, phone);
-  const papers = P.paperStack(ctx); place(papers, 5.88, deskTop, 4.58, 0.2); P.stat(ctx, papers);
-  const pens = P.penCup(ctx); place(pens, 6.05, deskTop, 4.95); P.stat(ctx, pens);
-  const gl = P.globe(ctx, 0.13); place(gl, 5.76, deskTop, 4.98, 0.6); P.stat(ctx, gl);
+  // ---- executive desk in the east half facing the door, the chair behind it with its back to the east
+  // window. The desk sits toward the window wall so a 0.9 m passage runs between it and the bookcase.
+  const dW = 1.8, dD = 0.85, dH = 0.75;
+  const deskX = 6.0, deskZ = 4.7; // desk spans z 3.8..5.6, x 5.575..6.425
+  const desk = P.executiveDesk(ctx, dW, dD, dH);
+  place(desk, deskX, y0, deskZ, -Math.PI / 2);
+  addStatic(ctx, desk, [{ size: [dW, dH, dD], center: [0, dH / 2, 0] }]);
+  const deskTop = y0 + dH;
+  P.monitor(ctx, 6.12, deskTop, deskZ + 0.1, Math.PI / 2, 'study');
+  const kb = P.keyboard(ctx); place(kb, 6.31, deskTop, deskZ + 0.1, Math.PI / 2); P.stat(ctx, kb);
+  const ms = P.mouse(ctx); place(ms, 6.32, deskTop, deskZ - 0.23, Math.PI / 2 + 0.2); P.stat(ctx, ms);
+  mug(ctx, 6.3, deskTop, deskZ + 0.47, 0x2f4a3a);
+  tableLamp(ctx, 5.78, deskTop, deskZ - 0.63, { shadeColor: 0x2e6b40, color: 0xb08d3c, height: 0.42, label: 'desk lamp' });
+  const phone = P.deskPhone(ctx); place(phone, 5.84, deskTop, deskZ - 0.25, Math.PI / 2 - 0.35); P.stat(ctx, phone);
+  const papers = P.paperStack(ctx); place(papers, 5.88, deskTop, deskZ + 0.33, 0.2); P.stat(ctx, papers);
+  const pens = P.penCup(ctx); place(pens, 6.05, deskTop, deskZ + 0.7); P.stat(ctx, pens);
+  const gl = P.globe(ctx, 0.13); place(gl, 5.76, deskTop, deskZ + 0.73, 0.6); P.stat(ctx, gl);
 
   const chair = P.officeChair(ctx);
-  place(chair, 7.0, y0, 4.25, -Math.PI / 2 + 0.15);
+  place(chair, 7.0, y0, deskZ - 0.2, -Math.PI / 2 + 0.15);
   addStatic(ctx, chair, [{ size: [0.62, 1.25, 0.62], center: [0, 0.625, 0] }], { surface: 'leather' });
 
+  // wastebasket at the sitter's right hand, between the chair and the south-east corner
   const bin = P.wastebasket(ctx);
-  place(bin, 6.75, y0, 3.5);
+  place(bin, 7.55, y0, 3.9);
   P.stat(ctx, bin);
-  ctx.physics.addCylinder({ x: 6.75, y: y0 + 0.15, z: 3.5 }, 0.14, 0.3, { meta: { surface: 'metal' } });
+  ctx.physics.addCylinder({ x: 7.55, y: y0 + 0.15, z: 3.9 }, 0.14, 0.3, { meta: { surface: 'metal' } });
 
-  // filing cabinet in the south-east corner with the decanter tray on top
-  P.filingCabinet(ctx, 7.55, y0, 2.87, 0, 0x3b4a3f);
-  P.decanterTray(ctx, 7.55, y0 + 1.045, 2.87, 0);
+  // archive boxes tucked into the pocket between the bookcase end and the east wall
+  const boxes = P.archiveBoxes(ctx);
+  place(boxes, 7.42, y0, 2.76);
+  addStatic(ctx, boxes, [{ size: [0.44, 0.64, 0.36], center: [0, 0.32, 0] }], { surface: 'cardboard' });
+
+  // filing cabinet against the west wall beside the door (out of the swing), decanter tray on top
+  const fcX = westX + 0.29, fcZ = 3.15;
+  P.filingCabinet(ctx, fcX, y0, fcZ, Math.PI / 2, 0x3b4a3f);
+  P.decanterTray(ctx, fcX, y0 + 1.045, fcZ, Math.PI / 2);
 
   // ---- reading corner: club chair, floor lamp, side table with a novel
   const arm = P.clubArmchair(ctx, 0xffffff, 0x8f2f2f);
@@ -308,12 +323,13 @@ function buildStudy(ctx: Ctx) {
 
   rug(ctx, 4.35, y0, 4.15, 2.4, 1.7, 'red');
 
-  // ---- walls: paintings, diplomas, clock
+  // ---- walls: a landscape above the filing cabinet, a portrait-format painting and the clock above the
+  // reading chair (the pier between the two front windows is hidden behind curtains, so nothing goes there)
   const art1 = P.framed(ctx, ctx.tex.art(3, 1.31), 0.55, 0.42, { frameColor: 0x9a7b3c, frameW: 0.045, matte: 0.03 });
-  place(art1, westX + 0.002, y0 + 1.6, 3.28, Math.PI / 2);
+  place(art1, westX + 0.002, y0 + 1.78, fcZ, Math.PI / 2);
   P.stat(ctx, art1);
   const art2 = P.framed(ctx, ctx.tex.art(5, 0.75), 0.42, 0.56, { frameColor: 0x9a7b3c, frameW: 0.045, matte: 0.03 });
-  place(art2, 5.88, y0 + 1.6, northZ - 0.002, Math.PI);
+  place(art2, 2.95, y0 + 1.65, northZ - 0.002, Math.PI);
   P.stat(ctx, art2);
   const diplomaFont = 'italic bold 54px Georgia, serif';
   const d1 = ctx.tex.label('Diploma', { sub: 'Master of Architecture · Summa Cum Laude', bg: '#f6f1e3', fg: '#3a2f22', font: diplomaFont, w: 512, h: 384 });
@@ -323,5 +339,5 @@ function buildStudy(ctx: Ctx) {
     place(f, westX + 0.002, y0 + 1.62, z, Math.PI / 2);
     P.stat(ctx, f);
   }
-  wallClock(ctx, 2.7, y0 + 1.95, northZ - 0.02, Math.PI);
+  wallClock(ctx, 1.98, y0 + 2.0, northZ - 0.02, Math.PI);
 }

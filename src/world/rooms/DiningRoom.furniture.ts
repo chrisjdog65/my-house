@@ -217,7 +217,7 @@ export function chandelier(ctx: Ctx, glassGroup: THREE.Group, x: number, ceilY: 
   const merged = mergeByMaterial(flames);
   ctx.dynamic.add(merged);
   const flameMesh = merged.children[0] as THREE.Mesh;
-  return ctx.lights.point(x, ceilY + armY - 0.02, z, { group, intensity: 12, distance: 9, color: 0xffe2bb, shadow: true, emissives: [{ mesh: flameMesh, on: bulbs.on, off: bulbs.off }] });
+  return ctx.lights.point(x, ceilY + armY - 0.02, z, { group, intensity: 10, distance: 9, color: 0xffe2bb, shadow: true, emissives: [{ mesh: flameMesh, on: bulbs.on, off: bulbs.off }] });
 }
 
 // -------------------------------------------------------------------------------------------

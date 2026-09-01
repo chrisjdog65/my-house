@@ -59,7 +59,8 @@ export function buildUpperHall(ctx: Ctx) {
     place(g, 0, y, FRONT - 0.2, FACE.negZ);
     addStatic(ctx, g, [{ size: [1.3, 0.78, 0.34], center: [0, 0.39, 0] }]);
   }
-  tableLamp(ctx, -0.47, y + 0.78, FRONT - 0.2, { group: 'upperhall-lamp', label: 'console lamp', color: 0x8a5a3c, height: 0.5 });
+  // the console group is rotated by PI, so the vase (local x +0.42) ends up at world x -0.42: lamp goes on the other end
+  tableLamp(ctx, 0.45, y + 0.78, FRONT - 0.2, { group: 'upperhall-lamp', label: 'console lamp', color: 0x8a5a3c, height: 0.5 });
 
   // ---- gallery wall: 6 family photos on the east wall between the bathroom and guest doors -------
   {

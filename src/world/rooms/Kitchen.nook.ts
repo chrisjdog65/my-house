@@ -106,10 +106,10 @@ export function buildNook(ctx: Ctx) {
   addStatic(ctx, table, []);
   ctx.physics.addCylinder({ x: TX, y: fy + 0.375, z: TZ }, TR, 0.75);
 
-  // chairs on the room side of the table (the window seat takes the other side)
-  for (const deg of [140, 180, 220]) {
+  // four chairs on the room side of the table (the window seat takes the east side)
+  for (const deg of [135, 180, 225, 275]) {
     const a = (deg * Math.PI) / 180;
-    const cx = TX + Math.cos(a) * 0.86, cz = TZ + Math.sin(a) * 0.86;
+    const cx = TX + Math.cos(a) * 0.88, cz = TZ + Math.sin(a) * 0.88;
     const dx = TX - cx, dz = TZ - cz;
     chair(ctx, cx, fy, cz, Math.atan2(dx, dz) + (rnd() - 0.5) * 0.12);
   }

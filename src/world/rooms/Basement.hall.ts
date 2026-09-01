@@ -474,7 +474,7 @@ export function buildBasementHall(ctx: Ctx, power: BasementPower) {
   }
 
   // ------------------------------------------------------------------ lights & switch
-  pullChainLight(ctx, 0.5, -5.0, GROUP, { shadow: true, intensity: 10 });
+  pullChainLight(ctx, 0.1, -5.3, GROUP, { shadow: true, intensity: 10 });
   pullChainLight(ctx, 0.1, 1.6, GROUP, { intensity: 9 });
   pullChainLight(ctx, 0.5, 4.6, GROUP, { intensity: 9 });
   lightSwitch(ctx, 0.5, y0 + 1.2, -5.84, 0, GROUP);

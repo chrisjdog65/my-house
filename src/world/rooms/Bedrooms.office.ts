@@ -271,7 +271,7 @@ function lDesk(ctx: Ctx) {
   const termMat = screenOn(term.tex), chartMat = screenOn(chart.tex);
   const s1 = Prim.quad(0.51, 0.3, mats.screenOff, { keepUV: true, cast: false }); s1.position.set(6.42, y + H + 0.3, -5.612); pc.add(s1);
   const s2 = Prim.quad(0.51, 0.3, mats.screenOff, { keepUV: true, cast: false }); s2.position.set(6.98, y + H + 0.3, -5.612); pc.add(s2);
-  const ledOn = mats.emissive(0x38bdf8, 2.5, 0x0a2a3a), ledOff = mats.solid(0x123, { roughness: 0.5 });
+  const ledOn = mats.emissive(0x38bdf8, 2.5, 0x0a2a3a), ledOff = mats.emissive(0xffa040, 0.9, 0x3a2a10); // amber = standby
   const led = Prim.sphere(0.006, ledOff, { segments: 6 }); led.position.set(7.515, y + 0.4, -4.68); pc.add(led);
   const powerBtn = Prim.cylinder(0.012, 0.012, 0.006, mats.solid(0x555a60, { roughness: 0.4, metalness: 0.5 }), { segments: 10 }); powerBtn.rotation.z = Math.PI / 2; powerBtn.position.set(7.515, y + 0.42, -4.72); pc.add(powerBtn);
   ctx.dynamic.add(pc);

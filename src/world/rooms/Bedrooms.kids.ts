@@ -131,9 +131,10 @@ function bunkBed(ctx: Ctx, x: number, z: number, rotY: number) {
   const wood = mats.maple;
   const L = 1.95, Wd = 1.0;
   const g = new THREE.Group();
+  const POST_H = 1.9, GUARD_Y = 1.86; // guard rail sits just under the post caps
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-    const p = Prim.rbox(0.07, 1.78, 0.07, 0.01, wood); p.position.set(sx * (L / 2 - 0.035), 0.89, sz * (Wd / 2 - 0.035)); g.add(p);
-    const cap = Prim.sphere(0.045, wood, { segments: 12 }); cap.position.set(sx * (L / 2 - 0.035), 1.8, sz * (Wd / 2 - 0.035)); g.add(cap);
+    const p = Prim.rbox(0.07, POST_H, 0.07, 0.01, wood); p.position.set(sx * (L / 2 - 0.035), POST_H / 2, sz * (Wd / 2 - 0.035)); g.add(p);
+    const cap = Prim.sphere(0.045, wood, { segments: 12 }); cap.position.set(sx * (L / 2 - 0.035), POST_H + 0.02, sz * (Wd / 2 - 0.035)); g.add(cap);
   }
   const tier = (base: number, quiltColor: number, pillowColor: number) => {
     for (const sz of [-1, 1]) { const rail = Prim.box(L - 0.07, 0.14, 0.035, wood); rail.position.set(0, base + 0.07, sz * (Wd / 2 - 0.0175)); g.add(rail); }
@@ -149,11 +150,14 @@ function bunkBed(ctx: Ctx, x: number, z: number, rotY: number) {
   const lowTop = tier(0.3, 0x3f7fc8, 0xf4d35e);
   const upTop = tier(1.3, 0xe86c3a, 0x8ecae6);
   // guard rails on the upper bunk (front & wall side, both ends)
+  // spindles run from the top of the upper tier's side rail (1.44) up to the guard rail
+  const TIER_RAIL_TOP = 1.3 + 0.14;
   const guard = (cx: number, cz: number, len: number, alongX: boolean, spindles: number) => {
-    const rail = Prim.box(alongX ? len : 0.035, 0.04, alongX ? 0.035 : len, wood); rail.position.set(cx, 1.95, cz); g.add(rail);
+    const rail = Prim.box(alongX ? len : 0.035, 0.04, alongX ? 0.035 : len, wood); rail.position.set(cx, GUARD_Y, cz); g.add(rail);
+    const sh = GUARD_Y - 0.02 - TIER_RAIL_TOP;
     for (let i = 0; i < spindles; i++) {
       const f = (i + 0.5) / spindles - 0.5;
-      const s = Prim.box(0.022, 0.31, 0.022, mats.trim); s.position.set(alongX ? cx + f * len : cx, 1.775, alongX ? cz : cz + f * len); g.add(s);
+      const s = Prim.box(0.022, sh, 0.022, mats.trim); s.position.set(alongX ? cx + f * len : cx, TIER_RAIL_TOP + sh / 2, alongX ? cz : cz + f * len); g.add(s);
     }
   };
   guard(-0.2, -(Wd / 2 - 0.02), L - 0.5, true, 7); // front (leaves room for the ladder)
@@ -337,7 +341,7 @@ function nightlight(ctx: Ctx, x: number, y: number, z: number, rotY: number) {
   ctx.interact.add(new Lamp(ctx, g, light, 'nightlight'));
 }
 
-function glowStars(ctx: Ctx, x0: number, x1: number, z0: number, z1: number) {
+function glowStars(ctx: Ctx, x0: number, x1: number, z0: number, z1: number, domeX: number, domeZ: number) {
   const mats = ctx.mats;
   const glow = mats.emissive(0xc8ffd0, 0.55, 0xdaf5df);
   const star = new THREE.Shape();
@@ -345,13 +349,16 @@ function glowStars(ctx: Ctx, x0: number, x1: number, z0: number, z1: number) {
   star.closePath();
   const g = new THREE.Group();
   const rnd = rng32(1234);
-  for (let i = 0; i < 18; i++) {
+  let placed = 0;
+  while (placed < 18) {
+    const px = x0 + rnd() * (x1 - x0), pz = z0 + rnd() * (z1 - z0), s = 0.6 + rnd() * 0.8, spin = rnd() * Math.PI;
+    if (Math.hypot(px - domeX, pz - domeZ) < 0.32) continue; // keep clear of the ceiling dome
     const m = Prim.extrude(star, 0.003, glow, { cast: false });
-    m.rotation.set(Math.PI / 2, 0, rnd() * Math.PI);
-    const s = 0.6 + rnd() * 0.8;
+    m.rotation.set(Math.PI / 2, 0, spin);
     m.scale.setScalar(s);
-    m.position.set(x0 + rnd() * (x1 - x0), CEIL - 0.006, z0 + rnd() * (z1 - z0));
+    m.position.set(px, CEIL - 0.006, pz);
     g.add(m);
+    placed++;
   }
   // a crescent moon (torus already lies flat in XZ)
   const moon = Prim.torus(0.06, 0.012, glow, { arc: Math.PI * 1.25, cast: false });
@@ -394,7 +401,7 @@ export function buildKidsRoom(ctx: Ctx) {
     placeStatic(ctx, g, E - 0.17, -2.2, FACE.negX, [{ size: [0.9, 1.2, 0.3], center: [0, 0.6, 0] }]);
     // books (spines face -x)
     bookRow(ctx, E - 0.17, y + shelfY[0], -2.32, 0.5, FACE.negX, 0.24, 71);
-    bookRow(ctx, E - 0.17, y + shelfY[1], -2.12, 0.7, FACE.negX, 0.22, 72);
+    bookRow(ctx, E - 0.17, y + shelfY[1], -2.16, 0.7, FACE.negX, 0.22, 72);
     const bin = Prim.rbox(0.28, 0.2, 0.24, 0.02, mats.solid(0xf4a261, { roughness: 0.5 })); place(bin, E - 0.17, y + shelfY[0] + 0.1, -1.92, 0); addStatic(ctx, bin);
     const blocksOnShelf = new THREE.Group();
     for (let i = 0; i < 3; i++) { const b = Prim.rbox(0.06, 0.06, 0.06, 0.006, mats.solid([0x457b9d, 0xe63946, 0x8ac926][i], { roughness: 0.55 })); b.position.set(0, 0.03 + i * 0.06, 0); b.rotation.y = i * 0.4; blocksOnShelf.add(b); }
@@ -435,7 +442,7 @@ export function buildKidsRoom(ctx: Ctx) {
   poster(ctx, E, y + 1.12, -4.65, FACE.negX, 0.24, 1.44, heightChart(), { frame: null });
   wallClock(ctx, -2.7, y + 1.95, S, FACE.negZ, 0.15);
   fairyLights(ctx, [new THREE.Vector3(-7.7, y + 2.2, S), new THREE.Vector3(-6.75, y + 2.2, S), new THREE.Vector3(-5.8, y + 2.2, S), new THREE.Vector3(-4.85, y + 2.2, S), new THREE.Vector3(-3.9, y + 2.2, S)], new THREE.Vector3(0, 0, -1));
-  glowStars(ctx, -7.4, -2.0, -5.5, -2.0);
+  glowStars(ctx, -7.4, -2.0, -5.5, -2.0, -4.7, -3.7);
   nightlight(ctx, W, y + 0.35, -2.68, FACE.posX);
 
   // name letters above the bunk

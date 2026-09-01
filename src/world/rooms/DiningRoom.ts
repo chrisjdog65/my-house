@@ -15,6 +15,7 @@ import { roomById, LEVELS, HOUSE } from '../Plan';
 import { Prim, mergeByMaterial } from '../Builder';
 import { addStatic, recessedLight, lightSwitch, tableLamp, pictureFrame, rug, plant, curtains, wallClock, pickup, collider } from '../Props';
 import { buildTable, buildChair, placeSetting, chandelier, buildSideboard, buildChinaCabinet, buildBarCart, wineGlass } from './DiningRoom.furniture';
+import { ceilingMedallion, wallSconce } from './DiningRoom.decor';
 
 export function buildDiningRoom(ctx: Ctx, structure: Structure) {
   void structure;
@@ -121,9 +122,10 @@ export function buildDiningRoom(ctx: Ctx, structure: Structure) {
     [TX - 0.78, TZ, Math.PI / 2], [TX + 0.78, TZ, -Math.PI / 2],
   ];
   const settingProto = placeSetting(ctx, napkin);
+  const RUNNER_T = 0.006; // the two end settings sit on the runner, the side ones on bare wood
   for (const [sx, sz, ry] of settings) {
     const s = settingProto.clone();
-    s.position.set(sx, TOP, sz);
+    s.position.set(sx, TOP + (Math.abs(ry) === Math.PI / 2 ? RUNNER_T : 0), sz);
     s.rotation.y = ry;
     addStatic(ctx, s, []);
     // wine glass ahead-right of the plate (world space, into the shared glass mesh)
@@ -136,8 +138,8 @@ export function buildDiningRoom(ctx: Ctx, structure: Structure) {
   {
     // table runner + centrepiece vase with flowers + salt & pepper
     const g = new THREE.Group();
-    const runner = Prim.rbox(2.0, 0.006, 0.36, 0.002, mats.fabric(0x2f3d5c));
-    runner.position.set(0, 0.003, 0);
+    const runner = Prim.rbox(2.0, RUNNER_T, 0.36, 0.002, mats.fabric(0x2f3d5c));
+    runner.position.set(0, RUNNER_T / 2, 0);
     g.add(runner);
     const vase = Prim.lathe([[0, 0], [0.045, 0], [0.06, 0.02], [0.07, 0.09], [0.062, 0.16], [0.04, 0.2], [0.036, 0.24], [0.042, 0.27], [0.032, 0.27], [0.03, 0.25], [0, 0.25]], mats.solid(0x2f5f7a, { roughness: 0.15, physical: true, clearcoat: 0.8 }), { segments: 20 });
     vase.position.set(0, 0.006, 0);
@@ -181,11 +183,15 @@ export function buildDiningRoom(ctx: Ctx, structure: Structure) {
   }
 
   // ---------------------------------------------------------------------------------------
-  // Chandelier + ceiling cans + switch
+  // Chandelier (under a plaster medallion) + ceiling cans + sconces + switch
   // ---------------------------------------------------------------------------------------
-  chandelier(ctx, glassGroup, TX, CEIL, TZ, GROUP);
+  ceilingMedallion(ctx, TX, CEIL, TZ, 0.36);
+  chandelier(ctx, glassGroup, TX, CEIL - 0.028, TZ, GROUP); // canopy tucks up inside the medallion boss
   recessedLight(ctx, -2.6, CEIL, -5.0, GROUP, { intensity: 9, distance: 6 });
   recessedLight(ctx, -6.9, CEIL, -5.0, GROUP, { intensity: 9, distance: 6 });
+  // brass candle sconces flanking the landscape on the east wall (painting spans z -3.8..-2.6)
+  wallSconce(ctx, WX1 - 0.004, Y + 1.62, -4.1, -Math.PI / 2, GROUP);
+  wallSconce(ctx, WX1 - 0.004, Y + 1.62, -2.3, -Math.PI / 2, GROUP);
   // switch on the latch side of the hall door (door z -1.15..-0.25, latch side toward the corner)
   lightSwitch(ctx, WX1 - 0.003, Y + 1.2, -0.125, -Math.PI / 2, GROUP, 'dining room lights');
 

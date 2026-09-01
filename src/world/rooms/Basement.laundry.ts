@@ -123,10 +123,12 @@ export function buildLaundry(ctx: Ctx, power: BasementPower) {
   {
     const g = new THREE.Group();
     const yp = CEIL_H - 0.04;
-    pipeRun([[1.56, yp, -4.55], [2.4, yp, -4.55], [2.4, yp, -5.75], [4.4, yp, -5.75], [4.4, 1.05, -5.75], [5.1, 1.05, -5.75], [5.1, 0.86, -5.75]], 0.012, bm.copper, g);
-    pipeRun([[1.56, yp, -4.65], [2.3, yp, -4.65], [2.3, yp, -5.7], [4.3, yp, -5.7], [4.3, 1.12, -5.7], [4.9, 1.12, -5.7], [4.9, 0.86, -5.7]], 0.012, bm.copper, g);
-    pipeRun([[2.9, yp, -5.75], [2.9, 1.5, -5.75]], 0.012, bm.copper, g);
-    pipeRun([[3.0, yp, -5.7], [3.0, 1.5, -5.7]], 0.012, bm.copper, g);
+    // hot & cold mains hug the back wall above the cabinet, then drop behind the sink (clear of the faucet)
+    pipeRun([[1.56, yp, -4.55], [2.4, yp, -4.55], [2.4, yp, -5.8], [4.45, yp, -5.8], [4.45, 1.12, -5.8], [4.45, 1.12, -5.838], [5.1, 1.12, -5.838], [5.1, 0.88, -5.838]], 0.012, bm.copper, g);
+    pipeRun([[1.56, yp, -4.65], [2.3, yp, -4.65], [2.3, yp, -5.75], [4.35, yp, -5.75], [4.35, 1.05, -5.75], [4.35, 1.05, -5.838], [4.9, 1.05, -5.838], [4.9, 0.88, -5.838]], 0.012, bm.copper, g);
+    // washer supplies: drop beside the cabinet, run along the wall into the supply box
+    pipeRun([[2.4, yp, -5.8], [2.4, 1.5, -5.8], [2.4, 1.5, -5.838], [2.89, 1.5, -5.838], [2.89, 1.46, -5.838]], 0.012, bm.copper, g);
+    pipeRun([[2.3, yp, -5.75], [2.3, 1.56, -5.75], [2.3, 1.56, -5.838], [3.01, 1.56, -5.838], [3.01, 1.46, -5.838]], 0.012, bm.copper, g);
     // supply box with valves and hoses to the washer
     const box = Prim.box(0.3, 0.24, 0.06, bm.plasticGrey);
     box.position.set(2.95, 1.35, -5.82);
@@ -332,7 +334,12 @@ export function buildLaundry(ctx: Ctx, power: BasementPower) {
       pin.rotation.set(rng() * 0.6, rng() * 3, rng() * 0.6);
       g.add(pin);
     }
-    placeStatic(ctx, g, 7.625, -4.9, -Math.PI / 2, [{ size: [L, 1.85, D], center: [0, 0.92, 0] }], 'metal');
+    // solid up to the third shelf, thin shelves above it (the detergent pickups sit on shelf 3)
+    placeStatic(ctx, g, 7.625, -4.9, -Math.PI / 2, [
+      { size: [L, 1.14, D], center: [0, 0.57, 0] },
+      { size: [L, 0.03, D], center: [0, 1.15, 0] },
+      { size: [L, 0.03, D], center: [0, 1.65, 0] },
+    ], 'metal');
     // detergent bottles (pickups) on the third shelf
     detergentBottle(ctx, 7.6, y0 + 1.16, -5.3, 0xf07d1a, 0xd1471a, 'SUDZ');
     detergentBottle(ctx, 7.6, y0 + 1.16, -5.0, 0x2f6fd0, 0x1f3f8f, 'GLOW');
@@ -387,7 +394,7 @@ export function buildLaundry(ctx: Ctx, power: BasementPower) {
       g.add(foot);
     }
     const yaw = 0.35;
-    placeStatic(ctx, g, 6.35, -2.4, yaw, [{ size: [0.36, 0.92, 1.3], center: [0, 0.46, 0.05] }], 'fabric');
+    placeStatic(ctx, g, 6.35, -2.4, yaw, [{ size: [0.36, 0.915, 1.3], center: [0, 0.4575, 0.05] }], 'fabric');
     const ig = new THREE.Group();
     const ironBody = Prim.rbox(0.12, 0.07, 0.24, 0.02, m.solid(0xe9e9e6, { roughness: 0.4 }));
     ironBody.position.y = 0.045;

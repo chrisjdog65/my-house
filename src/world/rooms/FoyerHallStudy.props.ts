@@ -329,12 +329,13 @@ export function coat(ctx: Ctx, color: number, opts: { scarf?: number; buttons?: 
   const mats = ctx.mats;
   const fab = mats.fabric(color);
   const g = new THREE.Group();
-  const shoulders = Prim.rbox(0.38, 0.13, 0.14, 0.05, fab); shoulders.position.set(0, -0.09, 0); g.add(shoulders);
-  const body = Prim.rbox(0.34, 0.74, 0.12, 0.05, fab); body.position.set(0, -0.47, 0); g.add(body);
+  // hung from a hook the coat drapes narrow: sleeves fall close to the body
+  const shoulders = Prim.rbox(0.32, 0.13, 0.14, 0.05, fab); shoulders.position.set(0, -0.09, 0); g.add(shoulders);
+  const body = Prim.rbox(0.28, 0.74, 0.12, 0.05, fab); body.position.set(0, -0.47, 0); g.add(body);
   const collarMat = mats.fabric(new THREE.Color(color).multiplyScalar(0.7).getHex());
   for (const s of [-1, 1]) {
-    const c = Prim.rbox(0.13, 0.09, 0.02, 0.008, collarMat); c.position.set(s * 0.065, -0.07, 0.07); c.rotation.z = s * 0.55; g.add(c);
-    const sleeve = Prim.capsule(0.05, 0.4, fab); sleeve.position.set(s * 0.205, -0.38, 0.0); sleeve.rotation.z = s * 0.06; g.add(sleeve);
+    const c = Prim.rbox(0.12, 0.09, 0.02, 0.008, collarMat); c.position.set(s * 0.06, -0.07, 0.07); c.rotation.z = s * 0.55; g.add(c);
+    const sleeve = Prim.capsule(0.045, 0.4, fab); sleeve.position.set(s * 0.15, -0.4, 0.0); sleeve.rotation.z = s * 0.05; g.add(sleeve);
   }
   const btn = mats.solid(opts.buttons ?? 0x1e1a16, { roughness: 0.4 });
   for (let i = 0; i < 3; i++) { const b = Prim.cylinder(0.011, 0.011, 0.005, btn, { segments: 10 }); b.rotation.x = Math.PI / 2; b.position.set(0.025, -0.24 - i * 0.13, 0.062); g.add(b); }
@@ -351,9 +352,26 @@ export function fedora(ctx: Ctx, color = 0x4a3f36): THREE.Group {
   const mats = ctx.mats;
   const fab = mats.fabric(color);
   const g = new THREE.Group();
-  const brim = Prim.cylinder(0.16, 0.165, 0.012, fab, { segments: 24 }); brim.position.y = 0.006; g.add(brim);
+  const brim = Prim.cylinder(0.148, 0.152, 0.012, fab, { segments: 24 }); brim.position.y = 0.006; g.add(brim);
   g.add(Prim.lathe([[0.1, 0.012], [0.106, 0.05], [0.096, 0.1], [0.06, 0.115], [0, 0.115]], fab, { segments: 24 }));
   const band = Prim.cylinder(0.109, 0.108, 0.028, mats.fabric(0x1e1a18), { segments: 24 }); band.position.y = 0.03; g.add(band);
+  return g;
+}
+
+/** Canvas tote bag hanging by its straps. Origin at the hook point; front = +z. */
+export function toteBag(ctx: Ctx, color = 0xd8cdb4, stripe = 0x2b3a55): THREE.Group {
+  const mats = ctx.mats;
+  const fab = mats.fabric(color);
+  const trim = mats.fabric(stripe);
+  const g = new THREE.Group();
+  // the bag hangs a little out from the wall (+z) so it clears coats on the neighbouring hooks
+  const body = Prim.rbox(0.3, 0.32, 0.07, 0.02, fab); body.position.set(0, -0.36, 0.13); g.add(body);
+  const band = Prim.box(0.302, 0.06, 0.074, trim); band.position.set(0, -0.29, 0.13); g.add(band);
+  const pocket = Prim.rbox(0.12, 0.1, 0.012, 0.005, trim); pocket.position.set(0.02, -0.41, 0.17); g.add(pocket);
+  for (const s of [-1, 1]) {
+    // straps run from the hook point diagonally down and out to the bag's top corners (±0.1, -0.2, 0.13)
+    const strap = Prim.box(0.02, 0.26, 0.006, trim); strap.position.set(s * 0.05, -0.105, 0.06); strap.rotation.set(-0.52, 0, s * 0.46); g.add(strap);
+  }
   return g;
 }
 
@@ -799,6 +817,34 @@ export function woodenBox(ctx: Ctx, w = 0.24, h = 0.1, d = 0.16): THREE.Group {
   const body = Prim.rbox(w, h, d, 0.006, mats.walnut); body.position.y = h / 2; g.add(body);
   const lid = Prim.rbox(w + 0.01, 0.015, d + 0.01, 0.004, mats.walnut); lid.position.y = h + 0.0075; g.add(lid);
   const clasp = Prim.box(0.02, 0.025, 0.006, mats.brass); clasp.position.set(0, h - 0.01, d / 2 + 0.003); g.add(clasp);
+  return g;
+}
+
+/** Two stacked cardboard archive boxes with labels, plus a rolled drawing tube leaning beside them. Front = +z. */
+export function archiveBoxes(ctx: Ctx): THREE.Group {
+  const mats = ctx.mats;
+  const card = mats.solid(0xb9a077, { roughness: 0.95 });
+  const cardDark = mats.solid(0xa48d66, { roughness: 0.95 });
+  const g = new THREE.Group();
+  const bw = 0.4, bh = 0.27, bd = 0.32;
+  for (let i = 0; i < 2; i++) {
+    const y = i * (bh + 0.035);
+    const rot = (i - 0.5) * 0.09;
+    const box = Prim.rbox(bw, bh, bd, 0.004, i ? card : cardDark); box.position.set(i * 0.012, y + bh / 2, -i * 0.01); box.rotation.y = rot; g.add(box);
+    const lid = Prim.rbox(bw + 0.014, 0.05, bd + 0.014, 0.004, card); lid.position.set(box.position.x, y + bh + 0.01, box.position.z); lid.rotation.y = rot; g.add(lid);
+    const tex = ctx.tex.label('ARCHIVE', { sub: i ? 'Contracts 2019 – 2021' : 'Drawings · Site plans', w: 256, h: 128, bg: '#f4efe4', fg: '#3a3229', font: 'bold 34px Georgia, serif' });
+    const label = Prim.quad(0.15, 0.075, imageMat(ctx, tex, { roughness: 0.9, envMapIntensity: 0.2 }), { keepUV: true, cast: false });
+    label.position.set(box.position.x, y + bh * 0.5, box.position.z + bd / 2 + 0.002); label.rotation.y = rot; g.add(label);
+  }
+  // drawing tube leaning against the wall on the +x side (top tips toward +x), rolled plans on the lid
+  const tubeMat = mats.solid(0x8a7350, { roughness: 0.85 });
+  const tube = new THREE.Group();
+  tube.add(Prim.cylinder(0.035, 0.035, 0.78, tubeMat, { segments: 12 }));
+  const cap = Prim.cylinder(0.038, 0.038, 0.03, mats.plasticBlack, { segments: 12 }); cap.position.y = 0.375; tube.add(cap);
+  const capB = Prim.cylinder(0.038, 0.038, 0.02, mats.plasticBlack, { segments: 12 }); capB.position.y = -0.38; tube.add(capB);
+  tube.position.set(0.3, 0.39, -0.04); tube.rotation.z = -0.1; g.add(tube);
+  const roll = Prim.cylinder(0.028, 0.028, 0.5, mats.solid(0xf1ece0, { roughness: 0.9 }), { segments: 10 }); roll.position.set(0.02, 0.65, 0.03); roll.rotation.set(0, 0, Math.PI / 2); roll.rotation.y = 0.2; g.add(roll);
+  const band = Prim.cylinder(0.031, 0.031, 0.02, mats.solid(0xb23a3a, { roughness: 0.6 }), { segments: 10 }); band.position.copy(roll.position); band.rotation.copy(roll.rotation); g.add(band);
   return g;
 }
 

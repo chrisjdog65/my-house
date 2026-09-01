@@ -130,6 +130,30 @@ export function buildKitchen(ctx: Ctx, structure: Structure) {
     tile(-4.17, -2.83, fy + COUNTER_H, fy + 1.12, 7.85, -Math.PI / 2);
     tile(-2.83, -2.3, fy + COUNTER_H, fy + 1.45, 7.85, -Math.PI / 2);
     addStatic(ctx, bs, [], { worldUV: true });
+    // outlet plates on the tile (0.012 tile + 0.008 plate)
+    const outlets = new THREE.Group();
+    const socketMat = m.solid(0xe4e2dc, { roughness: 0.6 });
+    const outlet = (x: number, z: number, rotY: number) => {
+      const o = new THREE.Group();
+      const plate = Prim.rbox(0.072, 0.116, 0.008, 0.002, m.plasticWhite, { segments: 1 });
+      plate.position.z = 0.004;
+      o.add(plate);
+      for (const dy of [-0.02, 0.02]) {
+        const s = Prim.cylinder(0.014, 0.014, 0.003, socketMat, { segments: 12, cast: false });
+        s.rotation.x = Math.PI / 2;
+        s.position.set(0, dy, 0.0095);
+        o.add(s);
+      }
+      place(o, x, fy + 1.12, z, rotY);
+      if (rotY === 0) o.position.z += 0.012; else o.position.x -= 0.012;
+      outlets.add(o);
+    };
+    outlet(2.12, -5.85, 0);
+    outlet(3.5, -5.85, 0);
+    outlet(5.6, -5.85, 0);
+    outlet(7.85, -4.24, -Math.PI / 2);
+    outlet(7.85, -2.42, -Math.PI / 2);
+    addStatic(ctx, outlets, []);
   }
 
   // =========================================================================================

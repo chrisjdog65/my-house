@@ -36,43 +36,47 @@ export function buildLivingRoom(ctx: Ctx, structure: Structure) {
 
   // ------------------------------------------------------------------ lighting
   for (const [x, z] of [[-6.3, 1.5], [-3.0, 1.5], [-6.3, 4.5], [-3.0, 4.5]]) recessedLight(ctx, x, ceil, z, room.id);
-  lightSwitch(ctx, eastFace - 0.002, y0 + 1.2, 2.94, -Math.PI / 2, room.id, 'living room lights');
+  // switch on the pier between the two arches, ~0.15 m from the foyer arch casing (casing edge z ~3.06)
+  lightSwitch(ctx, eastFace - 0.002, y0 + 1.2, 2.9, -Math.PI / 2, room.id, 'living room lights');
 
   // ------------------------------------------------------------------ fireplace + TV
   const FZ = 3;
   buildFireplace(ctx, westFace, y0, FZ, lvl.ceiling);
 
   // ------------------------------------------------------------------ seating
+  // sofa faces west toward the fireplace; the armchairs flank the coffee table, turned ~35 deg toward the hearth
   const sofaX = -4.45;
-  buildSofa(ctx, sofaX, y0, FZ, -Math.PI / 2, 0x8a9aa8);
-  buildArmchair(ctx, -6.4, y0, 1.55, -1.32, 0x6e4a30, 0xc9a24a);
-  buildArmchair(ctx, -6.4, y0, 4.45, -1.82, 0x6e4a30, 0x4b6f5a);
+  const pillowPal = [0xc9a24a, 0x7a4b6b, 0x4b6f5a, 0xb8563f, 0x3f5f8a, 0xe0d5c1];
+  const pick = () => pillowPal[Math.floor(rnd() * pillowPal.length)];
+  const sofaPillows = [pick(), pick(), 0xe0d5c1];
+  if (sofaPillows[1] === sofaPillows[0]) sofaPillows[1] = pillowPal[(pillowPal.indexOf(sofaPillows[0]) + 2) % pillowPal.length];
+  buildSofa(ctx, sofaX, y0, FZ, -Math.PI / 2, 0x8a9aa8, sofaPillows);
+  buildArmchair(ctx, -6.4, y0, 1.55, -0.6, 0x6e4a30, pick());
+  buildArmchair(ctx, -6.4, y0, 4.45, Math.PI + 0.6, 0x6e4a30, pick());
   rug(ctx, -5.65, y0, FZ, 3.0, 3.4, 'red');
   buildCoffeeTable(ctx, -6.05, y0, FZ);
-  for (const z of [1.67, 4.33]) {
-    buildSideTable(ctx, -4.225, y0, z);
+  for (const [z, accent] of [[1.67, 'candle'], [4.33, 'dish']] as [number, 'candle' | 'dish'][]) {
+    buildSideTable(ctx, -4.225, y0, z, accent);
     tableLamp(ctx, -4.225, y0 + 0.57, z, { label: 'lamp', color: 0x3a4a52, shadeColor: 0xf1e6cf });
   }
   floorLamp(ctx, -7.45, y0, 5.4, { on: false, label: 'floor lamp' });
 
   // ------------------------------------------------------------------ storage & decor furniture
   buildBookshelf(ctx, westFace + 0.02 + 0.16, y0, 1.0, Math.PI / 2);
-  buildConsole(ctx, -2.4, y0, backFace + 0.02 + 0.18);
+  buildConsole(ctx, -2.6, y0, backFace + 0.02 + 0.17);
 
   // ------------------------------------------------------------------ walls: art, clock, curtains
-  pictureFrame(ctx, eastFace - 0.001, y0 + 1.62, 2.6, -Math.PI / 2, 0.4, 0.6, ctx.tex.art(3, 0.4 / 0.6));
-  pictureFrame(ctx, -2.4, y0 + 1.5, backFace + 0.001, 0, 0.7, 0.45, ctx.tex.art(2, 0.7 / 0.45));
+  pictureFrame(ctx, eastFace - 0.001, y0 + 1.62, 2.58, -Math.PI / 2, 0.36, 0.56, ctx.tex.art(3, 0.36 / 0.56));
+  pictureFrame(ctx, -2.6, y0 + 1.5, backFace + 0.001, 0, 0.7, 0.45, ctx.tex.art(2, 0.7 / 0.45));
   pictureFrame(ctx, -7.0, y0 + 1.6, backFace + 0.001, 0, 0.9, 0.65, ctx.tex.art(5, 0.9 / 0.65), { frameColor: 0x4a3423 });
-  wallClock(ctx, -2.4, y0 + 2.1, backFace + 0.02, 0, 0.16);
+  wallClock(ctx, -2.6, y0 + 2.1, backFace + 0.02, 0, 0.16);
   curtains(ctx, -6, y0, frontFace - 0.04, Math.PI, 1.5, 2.3, 0xb9a58a);
   curtains(ctx, -3.5, y0, frontFace - 0.04, Math.PI, 1.5, 2.3, 0xb9a58a);
 
   // ------------------------------------------------------------------ plants
   plant(ctx, -1.92, y0, 5.58, 1.3, { potColor: 0x5f6b63 });
   plant(ctx, -7.55, y0, 4.78, 0.9, { kind: 'bush', potColor: 0xb5573e });
-  plant(ctx, -2.72, y0 + 0.8, backFace + 0.2, 0.42, { potColor: 0xe6dccb });
-
-  void rnd;
+  plant(ctx, -2.92, y0 + 0.8, backFace + 0.2, 0.42, { potColor: 0xe6dccb });
 }
 
 // =====================================================================================
@@ -143,20 +147,21 @@ function buildFireplace(ctx: Ctx, wallX: number, y0: number, zc: number, ceilH: 
     wick.position.set(0.38, top + 0.012 + h + 0.006, z);
     fp.add(wick);
   }
-  fp.add(standingFrame(ctx, ctx.tex.photo(2), 0.16, 0.12, 0.4, top, 0.62));
-  // vase with dried stems
+  fp.add(standingFrame(ctx, ctx.tex.photo(2), 0.16, 0.12, 0.4, top, 0.5));
+  // vase with dried stems at the far end of the shelf, clear of the TV (which spans z +-0.56 above the mantel)
+  const VZ = 0.86;
   const vase = Prim.lathe([[0, 0], [0.035, 0], [0.045, 0.06], [0.03, 0.14], [0.02, 0.18], [0.024, 0.2], [0.0, 0.2]], mats.solid(0x6f8a7b, { roughness: 0.25, envMapIntensity: 0.9, physical: true, clearcoat: 0.6 }), { segments: 20 });
-  vase.position.set(0.37, top, 0.32);
+  vase.position.set(0.37, top, VZ);
   fp.add(vase);
   const stemMat = mats.solid(0x8a6f3c, { roughness: 0.9 });
   for (let i = 0; i < 4; i++) {
     const a = i * 1.6, tilt = 0.12 + i * 0.05;
     const stem = Prim.cylinder(0.002, 0.003, 0.3, stemMat, { segments: 6 });
-    stem.position.set(0.37 + Math.sin(a) * 0.04, top + 0.2 + 0.14, 0.32 + Math.cos(a) * 0.04);
+    stem.position.set(0.37 + Math.sin(a) * 0.04, top + 0.2 + 0.14, VZ + Math.cos(a) * 0.04);
     stem.rotation.set(Math.cos(a) * tilt, 0, -Math.sin(a) * tilt);
     fp.add(stem);
     const head = Prim.sphere(0.012, mats.solid(0xd8c39a, { roughness: 0.9 }), { segments: 8 });
-    head.position.set(0.37 + Math.sin(a) * 0.075, top + 0.2 + 0.29, 0.32 + Math.cos(a) * 0.075);
+    head.position.set(0.37 + Math.sin(a) * 0.075, top + 0.2 + 0.29, VZ + Math.cos(a) * 0.075);
     fp.add(head);
   }
   // two stacked books on the mantel
@@ -197,7 +202,8 @@ function buildFireplace(ctx: Ctx, wallX: number, y0: number, zc: number, ceilH: 
   // the merged group holds the coals as a separate mesh (keepSeparate) so its material can swap
   const coalsMesh = grateMerged.children.find((c) => c.name === 'coals') as THREE.Mesh;
 
-  const fire = new Fire(ctx, new THREE.Vector3(firePos.x + 0.01, firePos.y + 0.2, firePos.z), { width: 0.5, height: 0.44 });
+  // flames sized to the firebox: 0.5 across the opening (z), 0.26 into it (x) so no sheet pokes out
+  const fire = new Fire(ctx, new THREE.Vector3(firePos.x + 0.01, firePos.y + 0.2, firePos.z), { width: 0.5, depth: 0.26, height: 0.44 });
   const FIRE_I = 7;
   const fireLight = ctx.lights.point(wallX + BD - 0.1, y0 + 0.55, zc, {
     color: 0xff8c3a, intensity: FIRE_I, distance: 6, flicker: 0.5, shadow: true, on: false,
@@ -460,8 +466,8 @@ function pillow(ctx: Ctx, color: number, size = 0.42) {
   return p;
 }
 
-/** Three-seat sofa. Local: length along x, faces +z. */
-function buildSofa(ctx: Ctx, x: number, y: number, z: number, rotY: number, color: number) {
+/** Three-seat sofa. Local: length along x, faces +z. `pillows` = colours for the three throw pillows. */
+function buildSofa(ctx: Ctx, x: number, y: number, z: number, rotY: number, color: number, pillows: number[] = [0xc9a24a, 0x7a4b6b, 0xe0d5c1]) {
   const mats = ctx.mats;
   const fab = mats.fabric(color);
   const fabDark = mats.fabric(new THREE.Color(color).multiplyScalar(0.82).getHex());
@@ -495,15 +501,15 @@ function buildSofa(ctx: Ctx, x: number, y: number, z: number, rotY: number, colo
     g.add(bc);
   }
   // throw pillows at both ends
-  const p1 = pillow(ctx, 0xc9a24a);
+  const p1 = pillow(ctx, pillows[0]);
   p1.position.set(-inner / 2 + 0.25, 0.69, -0.1);
   p1.rotation.set(-0.25, 0.35, 0.05);
   g.add(p1);
-  const p2 = pillow(ctx, 0x7a4b6b);
+  const p2 = pillow(ctx, pillows[1]);
   p2.position.set(inner / 2 - 0.24, 0.69, -0.09);
   p2.rotation.set(-0.22, -0.3, -0.04);
   g.add(p2);
-  const p3 = pillow(ctx, 0xe0d5c1, 0.36);
+  const p3 = pillow(ctx, pillows[2], 0.36);
   p3.position.set(-inner / 2 + 0.55, 0.66, -0.06);
   p3.rotation.set(-0.3, 0.15, 0.02);
   g.add(p3);
@@ -643,7 +649,7 @@ function buildRemote(ctx: Ctx, x: number, y: number, z: number, rotY: number) {
   pickup(ctx, merged, { name: 'TV remote', mass: 0.15, shape: { type: 'box', size: new THREE.Vector3(0.045, 0.024, 0.17) }, offset: new THREE.Vector3(0, 0.012, 0) });
 }
 
-function buildSideTable(ctx: Ctx, x: number, y: number, z: number) {
+function buildSideTable(ctx: Ctx, x: number, y: number, z: number, accent: 'candle' | 'dish' = 'candle') {
   const mats = ctx.mats;
   const g = new THREE.Group();
   const S = 0.45, H = 0.55;
@@ -662,6 +668,25 @@ function buildSideTable(ctx: Ctx, x: number, y: number, z: number) {
   stack.position.set(0, 0.195, 0);
   stack.rotation.y = 0.2;
   g.add(stack);
+  // small clutter in the front corner of the top (the lamp base takes the centre)
+  if (accent === 'candle') {
+    const jar = Prim.cylinder(0.03, 0.028, 0.06, mats.solid(0xd8b98a, { roughness: 0.2, envMapIntensity: 0.9, physical: true, clearcoat: 0.7, opacity: 0.85 }), { segments: 16 });
+    jar.position.set(0.15, H + 0.03, 0.15);
+    g.add(jar);
+    const wick = Prim.cylinder(0.002, 0.002, 0.012, mats.black, { segments: 6 });
+    wick.position.set(0.15, H + 0.066, 0.15);
+    g.add(wick);
+  } else {
+    const dish = Prim.lathe([[0.02, 0], [0.055, 0.004], [0.065, 0.02], [0.06, 0.022], [0.05, 0.01], [0, 0.008]], mats.solid(0xf1ece2, { roughness: 0.3, envMapIntensity: 0.8, side: THREE.DoubleSide }), { segments: 18 });
+    dish.position.set(0.15, H, 0.15);
+    g.add(dish);
+    const glasses = Prim.torus(0.02, 0.003, mats.darkMetal);
+    glasses.position.set(0.135, H + 0.012, 0.15);
+    g.add(glasses);
+    const glasses2 = Prim.torus(0.02, 0.003, mats.darkMetal);
+    glasses2.position.set(0.18, H + 0.012, 0.15);
+    g.add(glasses2);
+  }
   g.position.set(x, y, z);
   addStatic(ctx, g, [{ size: [S, H, S], center: [0, H / 2, 0] }]);
 }
@@ -781,9 +806,7 @@ function buildConsole(ctx: Ctx, x: number, y: number, z: number) {
   key.position.set(0.3, H + 0.017, 0.03);
   key.rotation.y = 0.5;
   g.add(key);
-  const bowl = Prim.lathe([[0.03, 0], [0.07, 0.005], [0.1, 0.045], [0.095, 0.05], [0.09, 0.04], [0.06, 0.012], [0, 0.012]], mats.solid(0xd9c9a8, { roughness: 0.3, envMapIntensity: 0.9, physical: true, clearcoat: 0.7, side: THREE.DoubleSide }), { segments: 20 });
-  bowl.position.set(-0.32, H, 0.02);
-  g.add(bowl);
+  // (the small potted plant placed by the caller sits on the -x end of the top)
   g.position.set(x, y, z);
   addStatic(ctx, g, [{ size: [W, H, D], center: [0, H / 2, 0] }]);
 }
