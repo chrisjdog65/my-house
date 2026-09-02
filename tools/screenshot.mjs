@@ -5,9 +5,16 @@
  * Usage:
  *   node tools/screenshot.mjs [--url http://localhost:5173] [--out shots] [--only living,kitchen] [--w 1280 --h 720]
  *   node tools/screenshot.mjs --custom "name:x,y,z,yaw,cyaw,cpitch,dist[,t]"
+ *   node tools/screenshot.mjs --only rec --inject probe.js
  *
  * Each shot loads the game with URL params that auto-start it, teleport the player and aim the camera.
  * Writes PNGs to the output directory and prints render stats + any JS errors as JSON.
+ *
+ * --inject runs a JS file in the page once the scene is ready and before the capture, with `game`
+ * bound to window.__game; whatever it returns is printed. Use it to isolate one thing at a time --
+ * hide the sky, drop a lighting term, tint a material -- and see or measure the result. Note that
+ * the capture freezes the render loop after 8 frames, so a probe that changes the scene and reads
+ * pixels back has to drive `engine.postfx.render()` itself rather than wait for a frame.
  */
 const pw = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const { chromium } = pw;

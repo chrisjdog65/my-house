@@ -70,6 +70,8 @@ plus `solid(color, {roughness, metalness, clearcoat, sheen, opacity, ...})`, `em
 5. **Detail**: bevel edges (`rbox`), add small objects (cups, books, remotes, cushions, towels), vary colours with `ctx.rng()`.
 6. **Interactions**: each room should have several — lamps, switches, appliances with hinged doors, pickups, toggles with sound.
 7. **Performance**: reuse `ctx.mats.*`; avoid per-object `new THREE.MeshStandardMaterial`; prefer boxes/lathes over high-poly spheres.
+   A material built by hand also misses the environment map the library assigns, so three falls back to the scene-wide
+   `environmentIntensity` for it and the surface takes the full sky irradiance — which reads as a blue cast indoors.
    The static batch folds materials that differ only by colour into one vertex-coloured draw call, so colour variety is free —
    but every mesh left in `ctx.dynamic` costs a draw call in *every* pass (main, sun shadow, point shadow ×6, AO). Rules:
    - Only the parts that actually move or change material go in `ctx.dynamic`; the rest of the same object goes through `addStatic`.
