@@ -19,6 +19,11 @@ const mb = (n) => (n / (1024 * 1024)).toFixed(2) + ' MB';
 
 let html = read(path.join(SRC, 'index.html'));
 
+// Drop anything fetched over the network. The page is meant to run with no connection at all, and a
+// webfont link would otherwise stall the first paint offline; the CSS font stacks fall back to
+// system-ui and Georgia.
+html = html.replace(/[ \t]*<link[^>]*(?:href|src)="https?:\/\/[^"]*"[^>]*>\s*\n?/g, '');
+
 // stylesheet -> <style>
 html = html.replace(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g, (_m, href) => {
   const css = read(path.join(SRC, href.replace(/^\.?\//, '')));

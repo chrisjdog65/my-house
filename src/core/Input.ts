@@ -41,6 +41,13 @@ export class Input {
   private mouseButtons = new Set<number>();
   private mousePressed = new Set<number>();
   private dragging = false;
+  /**
+   * Set when pointer lock is acquired. The browser's first movementX/Y after locking can report the
+   * jump from wherever the cursor happened to be -- half a screen or more -- which arrives as one
+   * enormous look delta and leaves the camera flung somewhere the player never aimed it. Skip that
+   * first event; every one after it is a genuine relative movement.
+   */
+  private swallowNextLook = false;
   private lastX = 0;
   private lastY = 0;
   pointerLocked = false;
@@ -89,8 +96,12 @@ export class Input {
     window.addEventListener('mousemove', (e) => {
       if (!this.enabled) return;
       if (this.pointerLocked) {
-        this.lookAccX += e.movementX;
-        this.lookAccY += e.movementY;
+        if (this.swallowNextLook) { this.swallowNextLook = false; return; }
+        // Belt and braces: no real mouse reports this far in a single event, but a driver or a
+        // synthetic pointer can, and one such event would spin the view right round.
+        const MAX = 400;
+        this.lookAccX += Math.max(-MAX, Math.min(MAX, e.movementX));
+        this.lookAccY += Math.max(-MAX, Math.min(MAX, e.movementY));
       } else if (this.dragging) {
         this.lookAccX += e.clientX - this.lastX;
         this.lookAccY += e.clientY - this.lastY;
@@ -106,7 +117,9 @@ export class Input {
     el.addEventListener('contextmenu', (e) => e.preventDefault());
 
     document.addEventListener('pointerlockchange', () => {
-      this.pointerLocked = document.pointerLockElement === el;
+      const locked = document.pointerLockElement === el;
+      if (locked && !this.pointerLocked) this.swallowNextLook = true;
+      this.pointerLocked = locked;
     });
 
     // touch: a finger dragged on the right half of the screen = look (the joystick lives on the left)

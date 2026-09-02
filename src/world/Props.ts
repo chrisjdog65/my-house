@@ -42,6 +42,8 @@ export interface PickupOpts {
 }
 
 export class Pickup implements Interactable {
+  /** Stable tag for tooling: class names are mangled in a production build. */
+  readonly kind = 'pickup';
   object: THREE.Object3D;
   dyn: ReturnType<Ctx['physics']['addDynamic']>;
   radius = 2.2;

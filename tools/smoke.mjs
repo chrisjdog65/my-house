@@ -30,16 +30,23 @@ await page.route('**/*', (r) => {
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 const results = [];
-// Hold a key for `simSeconds` of *simulation* time (headless software rendering runs slower than real time).
-async function hold(key, simSeconds) {
+// Wait for `seconds` of *simulation* time. Headless software rendering runs far slower than real
+// time, and slower still when something else on the box is busy, so every timed check waits on the
+// engine clock rather than the wall clock. The wall-clock cap is only a hang guard.
+async function advance(seconds) {
   const t0 = await page.evaluate(() => window.__game.engine.time);
-  await page.keyboard.down(key);
-  const wall = Date.now() + 60000;
+  const wall = Date.now() + 180000;
   while (Date.now() < wall) {
     const t = await page.evaluate(() => window.__game.engine.time);
-    if (t - t0 >= simSeconds) break;
+    if (t - t0 >= seconds) return true;
     await page.waitForTimeout(50);
   }
+  return false;
+}
+/** Hold a key down for `seconds` of simulation time. */
+async function hold(key, seconds) {
+  await page.keyboard.down(key);
+  await advance(seconds);
   await page.keyboard.up(key);
   await page.waitForTimeout(150);
 }
@@ -93,10 +100,8 @@ try {
   check('climbs stairs', p3[1] > 2.0, `reached y=${p3[1].toFixed(2)} at z=${p3[2].toFixed(2)}`);
 
   // pickups
-  const pick = await page.evaluate(() => {
-    const items = window.__game.ctx.interact.items.filter((i) => i.constructor && i.constructor.name === 'Pickup');
-    return items.length;
-  });
+  // By the `kind` tag, not the class name -- a production build mangles class names.
+  const pick = await page.evaluate(() => window.__game.ctx.interact.items.filter((i) => i.kind === 'pickup').length);
   check('pickups exist', pick > 5, `${pick} pickups`);
   // --- interaction coverage: light switch, pickup + throw, fireplace, a door on each floor ---
   const findByPrompt = async (needle) => page.evaluate((n) => {
@@ -133,10 +138,16 @@ try {
     await page.waitForTimeout(400);
     const held = await page.evaluate(() => window.__game.ctx.carry.held ? window.__game.ctx.carry.held.name : null);
     check('object can be carried', !!held, `holding ${held}`);
-    const p0 = await page.evaluate(() => { const h = window.__game.ctx.carry.held; const t = h.dyn.body.translation(); return [t.x, t.y, t.z]; });
+    // Stash the thrown object itself: the registry may reorder, so the index is not a stable handle.
+    const p0 = await page.evaluate(() => {
+      const h = window.__game.ctx.carry.held;
+      window.__thrown = h;
+      const t = h.dyn.body.translation();
+      return [t.x, t.y, t.z];
+    });
     await page.evaluate(() => window.__game.ctx.carry.throw(new window.__game.player.position.constructor(0, 0.2, 1), 9));
-    await page.waitForTimeout(900);
-    const p1 = await page.evaluate((idx) => { const t = window.__game.ctx.interact.items[idx].dyn.body.translation(); return [t.x, t.y, t.z]; }, pickIdx);
+    await advance(1.0);
+    const p1 = await page.evaluate(() => { const t = window.__thrown.dyn.body.translation(); return [t.x, t.y, t.z]; });
     const moved = Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]);
     check('thrown object flies', moved > 0.3, `travelled ${moved.toFixed(2)} m`);
   } else check('object can be carried', false, 'no pickup found');
