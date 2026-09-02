@@ -710,7 +710,9 @@ export class Structure {
 
   private buildChimney() {
     const ctx = this.ctx;
-    const zc = 3.0, w = 1.6, d = 0.7;
+    // Jogged south of the living-room firebox (z=3) so the stack clears the upper-floor west
+    // window at z=3.75 (which spans z 3.05..4.45) — otherwise the master bedroom looks onto brick.
+    const zc = 2.2, w = 1.5, d = 0.7;
     const x = HOUSE.x0 - d / 2 + 0.02;
     const top = HOUSE.roofPeak + 0.9;
     const bottom = HOUSE.groundY - 0.2;
