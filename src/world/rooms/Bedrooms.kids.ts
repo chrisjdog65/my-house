@@ -435,7 +435,7 @@ export function buildKidsRoom(ctx: Ctx) {
   // ---- rug, curtains, decor ------------------------------------------------------------------
   rug(ctx, -4.7, y, -3.8, 2.4, 1.8, 'blue', 0);
   curtains(ctx, W, y, -3.75, FACE.posX, 1.4, 2.3, 0x6fa8dc);
-  curtains(ctx, B, y, -4.75, FACE.posZ, 1.6, 2.3, 0x6fa8dc);
+  curtains(ctx, -4.75, y, B, FACE.posZ, 1.6, 2.3, 0x6fa8dc);
   poster(ctx, -2.75, y + 1.6, B, FACE.posZ, 0.5, 0.69, dinoPoster(), { frame: null });
   poster(ctx, E, y + 1.72, -2.2, FACE.negX, 0.5, 0.69, spacePoster(), { frame: 0x1d3557, frameW: 0.025 });
   poster(ctx, -4.0, y + 1.55, S, FACE.negZ, 0.62, 0.46, ctx.tex.art(2), { frame: 0xf4d35e, frameW: 0.03 });

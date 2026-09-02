@@ -392,7 +392,7 @@ export function buildOffice(ctx: Ctx) {
   daybed(ctx, W + 0.02 + 0.425, -4.98, FACE.posX);
   lDesk(ctx);
   officeChair(ctx, 6.7, -4.5, FACE.negZ);
-  tableLamp(ctx, 6.05, y + 0.74, -5.58, { group: 'bedroom4-desk', label: 'desk lamp', color: 0x2a2c30, shadeColor: 0xe8e2d2, height: 0.5 });
+  tableLamp(ctx, 6.05, y + 0.74, -5.35, { group: 'bedroom4-desk', label: 'desk lamp', color: 0x2a2c30, shadeColor: 0xe8e2d2, height: 0.5 });
   mug(ctx, 7.5, y + 0.74, -5.45, 0x2f5d8a, 'coffee mug');
   {
     const { g, shelfY } = shelfUnit(ctx, 1.0, 1.9, 0.3, 5, mats.walnut);
@@ -410,7 +410,8 @@ export function buildOffice(ctx: Ctx) {
     bookRow(ctx, 2.7, y + shelfY[0], N - 0.17, 0.9, FACE.negZ, 0.3, 81);
     bookRow(ctx, 2.55, y + shelfY[1], N - 0.17, 0.6, FACE.negZ, 0.26, 82);
     bookRow(ctx, 2.7, y + shelfY[3], N - 0.17, 0.88, FACE.negZ, 0.24, 83);
-    looseBook(ctx, 3.05, y + shelfY[1], N - 0.17, FACE.negZ + 0.3, 0x2f4858, 'manual');
+    // on top of the unit: the carcass has one full-height collider, so a pickup inside it would be squeezed out
+    looseBook(ctx, 3.05, y + 1.9, N - 0.17, FACE.negZ + 0.3, 0x2f4858, 'manual');
   }
   printerCabinet(ctx, 4.05, N - 0.02 - 0.225, FACE.negZ);
   filingCabinet(ctx, E - 0.02 - 0.3, -3.75, FACE.negX);

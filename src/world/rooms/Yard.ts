@@ -445,7 +445,10 @@ export function buildYard(ctx: Ctx, structure: Structure) {
     for (const lx of [-0.5, 0.5]) { const w = Prim.cylinder(0.08, 0.08, 0.04, mats.black, { segments: 12 }); w.rotation.z = Math.PI / 2; w.position.set(lx, 0.08, 0.25); body.add(w); }
     const grate = Prim.box(1.0, 0.01, 0.52, mats.darkMetal); grate.position.y = 0.95; body.add(grate);
     for (let i = 0; i < 3; i++) { const knob = Prim.cylinder(0.03, 0.03, 0.03, mats.plasticBlack, { segments: 8 }); knob.rotation.x = Math.PI / 2; knob.position.set(-0.3 + i * 0.3, 0.6, 0.31); body.add(knob); }
-    root.add(mergeByMaterial(body));
+    // merge before use: the pre-merge group is never parented, so registering it as the Toggle's
+    // object would leave a pickable ghost copy of the grill at the world origin.
+    const grillBody = mergeByMaterial(body);
+    root.add(grillBody);
     const flameMat = mats.emissive(0xff7a1a, 2.0, 0xff5a00);
     const flames = new THREE.Group();
     for (let i = 0; i < 6; i++) { const f = Prim.cone(0.05, 0.14, flameMat, { segments: 6, cast: false }); f.position.set(-0.4 + i * 0.16, 0.99, (rnd() - 0.5) * 0.3); flames.add(f); }
@@ -458,7 +461,7 @@ export function buildYard(ctx: Ctx, structure: Structure) {
       pivot.add(mergeByMaterial(lid));
     }, 'grill lid', { maxAngle: -1.4, axis: 'x', sfx: 'drawer' });
     const light = ctx.lights.point(gx, G + 1.1, gz, { intensity: 0, distance: 3, color: 0xff8a3a, flicker: 0.5, on: false });
-    const toggle = new Toggle(body, { on: 'Turn off grill', off: 'Light grill' }, (on) => {
+    const toggle = new Toggle(grillBody, { on: 'Turn off grill', off: 'Light grill' }, (on) => {
       flames.visible = on;
       ctx.lights.setOn(light, on);
       light.intensity = on ? 3 : 0;
@@ -469,7 +472,8 @@ export function buildYard(ctx: Ctx, structure: Structure) {
   }
   // fire pit
   {
-    const fx = patioCx + 2.6, fz = PATIO.z1 - 1.2;
+    // west of the back-door steps (which occupy x 6.3..7.7, z -8.2..-7.1)
+    const fx = 4.6, fz = PATIO.z0 + 1.3;
     const ring = new THREE.Group();
     const stoneMat = mats.stone;
     for (let i = 0; i < 14; i++) {

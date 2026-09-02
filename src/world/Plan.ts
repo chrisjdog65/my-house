@@ -233,7 +233,9 @@ export interface StairDef {
 
 export const STAIRS: StairDef[] = [
   { id: 'up', x0: 0.05, x1: 1.44, zStart: -1.4, dir: -1, yBottom: 0, yTop: 3.05, risers: 17, tread: 0.27, floorBottom: 'ground', floorTop: 'upper' },
-  { id: 'down', x0: -1.44, x1: -0.15, zStart: -1.4, dir: -1, yBottom: -2.95, yTop: 0, risers: 16, tread: 0.27, floorBottom: 'basement', floorTop: 'ground' },
+  // Descends from the basement door (its TOP tread, at z=-1.4) toward -z, so `zStart` is the
+  // bottom riser deep in the basement and the run ascends back to the door.
+  { id: 'down', x0: -1.44, x1: -0.15, zStart: -5.45, dir: 1, yBottom: -2.95, yTop: 0, risers: 16, tread: 0.27, floorBottom: 'basement', floorTop: 'ground' },
 ];
 
 /** Holes in floor slabs (stair openings) [x0,z0,x1,z1] */
