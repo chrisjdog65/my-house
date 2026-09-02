@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { Prim, place } from '../Builder';
 import type { Ctx } from '../Context';
 import type { Structure } from '../Structure';
-import { addStatic, lightSwitch, pickup, plant, recessedLight } from '../Props';
+import { addStatic, lightSwitch, pickup, recessedLight } from '../Props';
 import { C, EX, F, LIGHT_GROUP, NZ, ROD, SZ, TILE_T, TUB, VANITY_X, WX, buildToilet, buildTub, buildVanity } from './Bathroom.fixtures';
 
 export function buildBathroom(ctx: Ctx, structure: Structure) {
@@ -26,7 +26,40 @@ export function buildBathroom(ctx: Ctx, structure: Structure) {
   buildWallBits(ctx);
   buildFloorBits(ctx);
   buildShelf(ctx);
-  plant(ctx, VANITY_X + 0.5, F + 0.89, NZ + 0.16, 0.32, { potColor: 0xe8e4dc });
+  miniPlant(ctx, VANITY_X + 0.5, F + 0.89, NZ + 0.16, 0.32);
+}
+
+/** Small static faux plant on the vanity (alpha-tested leaf cards batch fine, unlike Props.plant). */
+function miniPlant(ctx: Ctx, x: number, y: number, z: number, size = 0.32) {
+  const m = ctx.mats;
+  const g = new THREE.Group();
+  const potH = size * 0.3, potR = size * 0.15;
+  const pot = Prim.lathe([[potR * 0.7, 0], [potR * 0.95, 0], [potR, potH * 0.9], [potR * 1.08, potH * 0.9], [potR * 1.08, potH], [potR * 0.88, potH], [potR * 0.88, potH * 0.85], [0, potH * 0.85]], m.solid(0xe8e4dc, { roughness: 0.7 }), { segments: 18 });
+  g.add(pot);
+  const soil = Prim.cylinder(potR * 0.86, potR * 0.86, 0.01, m.soil, { cast: false });
+  soil.position.y = potH * 0.85; g.add(soil);
+  const leafMat = m.image(ctx.tex.foliage('leaf'), { transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8, envMapIntensity: 0.3 });
+  const stemMat = m.solid(0x4c6b3c, { roughness: 0.8 });
+  const n = 4;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + ctx.rng() * 0.6;
+    const tilt = 0.3 + ctx.rng() * 0.3;
+    const len = size * (0.45 + ctx.rng() * 0.2);
+    const stem = Prim.cylinder(0.004, 0.006, len, stemMat, { segments: 6 });
+    stem.position.set(Math.sin(a) * len * 0.5 * Math.sin(tilt), potH * 0.85 + Math.cos(tilt) * len * 0.5, Math.cos(a) * len * 0.5 * Math.sin(tilt));
+    stem.rotation.set(Math.cos(a) * tilt, 0, -Math.sin(a) * tilt);
+    g.add(stem);
+    const card = Prim.quad(size * 0.45, size * 0.45, leafMat, { keepUV: true });
+    card.position.set(Math.sin(a) * len * Math.sin(tilt) * 0.9, potH * 0.85 + Math.cos(tilt) * len * 0.9 + size * 0.08, Math.cos(a) * len * Math.sin(tilt) * 0.9);
+    card.rotation.y = a + Math.PI / 2 + (ctx.rng() - 0.5);
+    card.rotation.x = (ctx.rng() - 0.5) * 0.5;
+    g.add(card);
+    const card2 = card.clone();
+    card2.rotation.y += Math.PI / 2;
+    g.add(card2);
+  }
+  place(g, x, y, z, ctx.rng() * Math.PI * 2);
+  addStatic(ctx, g);
 }
 
 // -------------------------------------------------------------------------------------------
@@ -211,6 +244,10 @@ function buildWallBits(ctx: Ctx) {
   robe.position.set(WX + 0.08, hookY - 0.455, rz); robe.rotation.y = 0.04; g.add(robe);
   const collar = Prim.rbox(0.2, 0.12, 0.03, 0.012, robeFab, { segments: 2 });
   collar.position.set(WX + 0.135, hookY - 0.04, rz); g.add(collar);
+  for (const s of [-1, 1]) {
+    const sleeve = Prim.rbox(0.09, 0.5, 0.11, 0.035, robeFab, { segments: 3 });
+    sleeve.position.set(WX + 0.085, hookY - 0.33, rz + s * 0.2); sleeve.rotation.x = s * 0.12; g.add(sleeve);
+  }
   const belt = Prim.rbox(0.38, 0.05, 0.012, 0.005, m.fabric(0xe1d9cb), { segments: 1 });
   belt.position.set(WX + 0.128, hookY - 0.56, rz); g.add(belt);
   const tie = Prim.rbox(0.05, 0.3, 0.012, 0.005, m.fabric(0xe1d9cb), { segments: 1 });
@@ -259,7 +296,7 @@ function buildFloorBits(ctx: Ctx) {
   const glassTop = Prim.rbox(0.28, 0.006, 0.28, 0.003, m.solid(0x22262a, { roughness: 0.15, metalness: 0.2, envMapIntensity: 1.2 }), { segments: 1 });
   glassTop.position.set(sx, F + 0.028, sz); glassTop.rotation.y = 0.15; g.add(glassTop);
   const display = Prim.box(0.06, 0.002, 0.02, m.solid(0x9fb7c8, { roughness: 0.3 }));
-  display.position.set(sx + Math.sin(0.15) * 0.1, F + 0.032, sz - Math.cos(0.15) * 0.1); display.rotation.y = 0.15; g.add(display);
+  display.position.set(sx - Math.sin(0.15) * 0.1, F + 0.032, sz - Math.cos(0.15) * 0.1); display.rotation.y = 0.15; g.add(display);
   // toilet brush beside the toilet
   const tx = 2.45, tz = 1.3;
   const holder = Prim.lathe([[0, 0], [0.045, 0], [0.05, 0.02], [0.05, 0.2], [0.04, 0.21], [0, 0.21]], m.plasticWhite, { segments: 18 });
@@ -283,7 +320,7 @@ function bottle(ctx: Ctx, x: number, y: number, z: number, color: number, h: num
   g.add(body);
   const cap = Prim.cylinder(0.013, 0.013, 0.025, m.plasticWhite, { segments: 10 });
   cap.position.y = h - 0.012; g.add(cap);
-  const label = Prim.cylinder(0.0345, 0.0345, h * 0.36, m.solid(0xf5f5f0, { roughness: 0.6 }), { segments: 18, cast: false });
+  const label = Prim.cylinder(0.0345, 0.0345, h * 0.36, m.plasticWhite, { segments: 18, cast: false });
   label.position.y = h * 0.42; g.add(label);
   g.position.set(x, y, z);
   g.rotation.y = ctx.rng() * Math.PI * 2;

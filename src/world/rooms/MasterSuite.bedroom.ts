@@ -9,8 +9,8 @@
 import * as THREE from 'three';
 import { Prim, place, mergeByMaterial } from '../Builder';
 import type { Ctx } from '../Context';
-import { addStatic, curtains, floorLamp, lightSwitch, looseBook, mug, pickup, plant, recessedLight, rug, tableLamp, Toggle } from '../Props';
-import { FLOOR, CEIL, FACE, cushion, framedPicture, labelQuad, placeStatic, upholsteredBench, wickerBasket } from './MasterSuite.shared';
+import { addStatic, curtains, floorLamp, lightSwitch, looseBook, mug, pickup, recessedLight, rug, tableLamp, Toggle } from '../Props';
+import { FLOOR, CEIL, FACE, cushion, framedPicture, labelQuad, placeStatic, staticPlant, upholsteredBench, wickerBasket } from './MasterSuite.shared';
 
 // wall faces (interior)
 const WEST = -7.85, EAST = -1.56, SOUTH = 1.56, FRONT = 5.85;
@@ -202,7 +202,7 @@ function robeOnHook(ctx: Ctx, x: number, y: number, z: number, rotY: number) {
   const mats = ctx.mats;
   const g = new THREE.Group();
   const plate = Prim.rbox(0.06, 0.08, 0.012, 0.004, mats.walnut); plate.position.z = 0.006; g.add(plate);
-  const hook = Prim.torus(0.02, 0.006, mats.brass, { arc: Math.PI }); hook.rotation.set(0, Math.PI / 2, 0); hook.position.set(0, 0.0, 0.03); g.add(hook);
+  const hook = Prim.torus(0.02, 0.006, mats.brass, { arc: Math.PI }); hook.rotation.set(0, 0, Math.PI / 2); hook.position.set(0, 0.0, 0.02); g.add(hook);
   const robeM = mats.fabric(0x7f8fa6);
   const robe = Prim.rbox(0.32, 0.95, 0.07, 0.03, robeM); robe.position.set(0.02, -0.5, 0.06); robe.rotation.z = 0.04; g.add(robe);
   const collar = Prim.rbox(0.2, 0.12, 0.08, 0.02, mats.fabric(0x6a7a90)); collar.position.set(0.02, -0.06, 0.065); g.add(collar);
@@ -233,8 +233,8 @@ function ceilingFan(ctx: Ctx, x: number, z: number) {
   const rod = Prim.cylinder(0.012, 0.012, 0.22, mats.darkMetal, { segments: 8 }); rod.position.y = -0.16; st.add(rod);
   const motor = Prim.cylinder(0.11, 0.1, 0.12, mats.darkMetal, { segments: 24 }); motor.position.y = -0.33; st.add(motor);
   const collar = Prim.cylinder(0.075, 0.075, 0.02, mats.brass, { segments: 20 }); collar.position.y = -0.4; st.add(collar);
-  const chain = Prim.cylinder(0.003, 0.003, 0.3, mats.brass, { segments: 6, cast: false }); chain.position.set(0.05, -0.62, 0.05); st.add(chain);
-  const knob = Prim.sphere(0.012, mats.walnut, { segments: 8 }); knob.position.set(0.05, -0.78, 0.05); st.add(knob);
+  const chain = Prim.cylinder(0.003, 0.003, 0.3, mats.brass, { segments: 6, cast: false }); chain.position.set(0.1, -0.57, 0); st.add(chain);
+  const knob = Prim.sphere(0.012, mats.walnut, { segments: 8 }); knob.position.set(0.1, -0.73, 0); st.add(knob);
   st.position.set(x, y, z);
   addStatic(ctx, st);
   // blades (dynamic, rotate about the hub)
@@ -283,13 +283,13 @@ export function buildMasterBedroom(ctx: Ctx) {
   // ---- bed wall (west, under the window) --------------------------------------------------------
   // headboard back at x=-7.65 leaves room for the floor-length curtains behind it
   kingBed(ctx, -6.46, 3.75, FACE.posX);
-  nightstand(ctx, -7.38, 2.48, FACE.posX);
-  nightstand(ctx, -7.38, 5.02, FACE.posX);
-  tableLamp(ctx, -7.44, y + 0.62, 2.36, { group: 'master-lamps', label: 'bedside lamp', color: 0x4f5e6b, shadeColor: 0xf1e7d2, height: 0.52 });
-  tableLamp(ctx, -7.44, y + 0.62, 5.14, { group: 'master-lamps', label: 'bedside lamp', color: 0x4f5e6b, shadeColor: 0xf1e7d2, height: 0.52 });
-  looseBook(ctx, -7.26, y + 0.62, 2.63, Math.PI / 2 + 0.15, 0x3b5a7a, 'novel');
-  phone(ctx, -7.2, y + 0.62, 2.3, Math.PI / 2 - 0.2);
-  alarmClock(ctx, -7.24, y + 0.62, 4.9, Math.PI / 2 + 0.1);
+  nightstand(ctx, -7.38, 2.44, FACE.posX);
+  nightstand(ctx, -7.38, 5.06, FACE.posX);
+  tableLamp(ctx, -7.44, y + 0.62, 2.32, { group: 'master-lamps', label: 'bedside lamp', color: 0x4f5e6b, shadeColor: 0xf1e7d2, height: 0.52 });
+  tableLamp(ctx, -7.44, y + 0.62, 5.18, { group: 'master-lamps', label: 'bedside lamp', color: 0x4f5e6b, shadeColor: 0xf1e7d2, height: 0.52 });
+  looseBook(ctx, -7.26, y + 0.62, 2.6, Math.PI / 2 + 0.15, 0x3b5a7a, 'novel');
+  phone(ctx, -7.2, y + 0.62, 2.26, Math.PI / 2 - 0.2);
+  alarmClock(ctx, -7.24, y + 0.62, 4.94, Math.PI / 2 + 0.1);
   slippers(ctx, -6.9, 4.98, FACE.posZ + 0.3);
   upholsteredBench(ctx, -5.13, 3.75, FACE.posX, 1.3, 0x9aa3ad, { throwColor: 0xb89b7c });
   rug(ctx, -6.15, y, 3.75, 2.9, 3.3, 'neutral', 0);
@@ -298,12 +298,12 @@ export function buildMasterBedroom(ctx: Ctx) {
   dresser(ctx, -4.875, SOUTH + 0.02 + 0.25, FACE.posZ);
 
   // ---- reading corner (front-east) ----------------------------------------------------------------
-  armchair(ctx, -2.45, 5.02, -Math.PI * 0.75, 0x7d6f63);
+  armchair(ctx, -2.5, 5.1, -Math.PI * 0.75, 0x7d6f63);
   sideTable(ctx, -3.2, 5.26);
   mug(ctx, -3.12, y + 0.55, 5.2, 0x3d5a6c, 'mug');
   looseBook(ctx, -3.3, y + 0.55, 5.34, 0.4, 0x8b2f2f, 'paperback');
   floorLamp(ctx, -1.92, y, 5.52, { group: 'master-lamps', label: 'reading lamp' });
-  plant(ctx, -5.7, y, 5.5, 1.15, { potColor: 0xd9d0c0 });
+  staticPlant(ctx, -5.7, y, 5.5, 1.15, { potColor: 0xd9d0c0 });
 
   // ---- windows, art, wall things -------------------------------------------------------------------
   curtains(ctx, -6, y, FRONT, FACE.negZ, 1.5, 2.3, 0xb8b0a4);

@@ -57,7 +57,7 @@ function shoeShelves(ctx: Ctx, g: THREE.Group, xWall: number, dir: 1 | -1, z0: n
       const [c, kind] = pairs[k++];
       const p = shoePair(ctx, c, kind);
       p.position.set(xWall + dir * 0.22, ly + 0.01, (z0 + z1) / 2 + slot * (w / 4) + (ctx.rng() - 0.5) * 0.04);
-      p.rotation.y = -dir * Math.PI / 2 + (ctx.rng() - 0.5) * 0.15; // toes toward the room
+      p.rotation.y = dir * Math.PI / 2 + (ctx.rng() - 0.5) * 0.15; // toes toward the room (local +z -> world dir*x)
       g.add(p);
     }
   }
@@ -108,7 +108,7 @@ export function buildWalkInCloset(ctx: Ctx) {
     const stackCols = [[0xe8e2d4, 0x9db4c0, 0xc9ad8f, 0x556270], [0xf5f0e6, 0x8a9a5b, 0xd9c6a5], [0x3b4a5c, 0xe6e6e0, 0xa0522d, 0x708090], [0xf0e0c0, 0x2f5d3a]];
     stackCols.forEach((c, i) => { const s = foldedStack(ctx, c, 0.32, 0.28, 0.045); s.position.set(WEST + 0.21, ROD_Y + 0.1625, -1.05 + i * 0.66); g.add(s); });
     const boxSpec: [number, number, number, string][] = [[-1.05, 0.36, 0xb9c6d1, 'WINTER'], [-0.62, 0.3, 0x9aa5b8, 'HATS'], [-0.05, 0.42, 0xc9b8a4, 'LINEN'], [0.5, 0.36, 0x8a9a8a, 'SUMMER'], [1.0, 0.36, 0xb9c6d1, 'PHOTOS']];
-    for (const [bz, bw, bc, label] of boxSpec) { const b = storageBox(ctx, bw, 0.24, 0.34, bc, { label }); b.position.set(WEST + 0.21, ROD_Y + 0.4625, bz); b.rotation.y = Math.PI / 2; g.add(b); }
+    for (const [bz, bw, bc, label] of boxSpec) { const b = storageBox(ctx, bw, 0.22, 0.34, bc, { label }); b.position.set(WEST + 0.21, ROD_Y + 0.4625, bz); b.rotation.y = Math.PI / 2; g.add(b); }
     // floor: two stacked boxes and a pair of boots under the hanging clothes
     const bx1 = storageBox(ctx, 0.42, 0.28, 0.34, 0xd8cfbf); bx1.position.set(WEST + 0.22, 0, 0.95); bx1.rotation.y = Math.PI / 2; g.add(bx1);
     const bx2 = storageBox(ctx, 0.38, 0.22, 0.3, 0xa9b3a6); bx2.position.set(WEST + 0.22, 0.28, 0.95); bx2.rotation.y = Math.PI / 2 + 0.08; g.add(bx2);
@@ -125,13 +125,13 @@ export function buildWalkInCloset(ctx: Ctx) {
     ];
     rodWithGarments(ctx, g, EAST - 0.24, -0.16, 1.33, cols);
     const shoesSpec: [number, ShoeKind][] = [
-      [0xf4f2ec, 'sneaker'], [0x2a2a2e, 'sneaker'], [0x8b2f2f, 'heel'], [0x1a1a1c, 'heel'], [0x5a3a25, 'loafer'], [0x2b2b30, 'loafer'],
-      [0xc9a24a, 'flat'], [0x6d8b74, 'flat'], [0x4a2e1e, 'boot'], [0x1f2a3e, 'boot'],
+      [0x4a2e1e, 'boot'], [0x1f2a3e, 'boot'], [0xf4f2ec, 'sneaker'], [0x2a2a2e, 'sneaker'], [0x8b2f2f, 'heel'], [0x1a1a1c, 'heel'],
+      [0x5a3a25, 'loafer'], [0x2b2b30, 'loafer'], [0xc9a24a, 'flat'], [0x6d8b74, 'flat'],
     ];
     shoeShelves(ctx, g, EAST, -1, -1.36, -0.22, [0.12, 0.42, 0.72, 1.02, 1.32], shoesSpec);
     // above the shoes: a hatbox and a stack of jeans
-    const hat = Prim.cylinder(0.14, 0.14, 0.13, mats.solid(0xb9a58a, { roughness: 0.85 }), { segments: 18 }); hat.position.set(EAST - 0.2, 1.6 + 0.065, -1.05); g.add(hat);
-    const hatLid = Prim.cylinder(0.145, 0.145, 0.02, mats.solid(0x9c8a70, { roughness: 0.85 }), { segments: 18 }); hatLid.position.set(EAST - 0.2, 1.6 + 0.14, -1.05); g.add(hatLid);
+    const hat = Prim.cylinder(0.14, 0.14, 0.13, mats.solid(0xb9a58a, { roughness: 0.85 }), { segments: 18 }); hat.position.set(EAST - 0.2, 1.61 + 0.065, -1.05); g.add(hat);
+    const hatLid = Prim.cylinder(0.145, 0.145, 0.02, mats.solid(0x9c8a70, { roughness: 0.85 }), { segments: 18 }); hatLid.position.set(EAST - 0.2, 1.61 + 0.14, -1.05); g.add(hatLid);
     const shelf = Prim.box(UNIT_D - 0.02, 0.02, 1.14, mats.solid(0xf1efe8, { roughness: 0.5, envMapIntensity: 0.4 })); shelf.position.set(EAST - UNIT_D / 2, 1.6, -0.79); g.add(shelf);
     const jeans = foldedStack(ctx, [0x2f4a6a, 0x3b5a7a, 0x223a52, 0x5a6f86], 0.3, 0.26, 0.05); jeans.position.set(EAST - 0.21, 1.61, -0.5); g.add(jeans);
     // shelves above the rod: sweaters and boxes
@@ -139,7 +139,7 @@ export function buildWalkInCloset(ctx: Ctx) {
     const sw2 = foldedStack(ctx, [0x556270, 0xe6e6e0, 0x8c6a4a], 0.32, 0.28, 0.05); sw2.position.set(EAST - 0.21, ROD_Y + 0.1625, 0.95); g.add(sw2);
     const blanket = Prim.rbox(0.5, 0.14, 0.3, 0.03, mats.fabric(0x9aa5b8)); blanket.position.set(EAST - 0.2, ROD_Y + 0.1625 + 0.07, -0.85); g.add(blanket);
     const boxSpec: [number, number, number, string | undefined][] = [[-1.0, 0.4, 0xc9b8a4, 'SHOES'], [-0.45, 0.36, 0xb9c6d1, 'BAGS'], [0.15, 0.42, 0x8a9a8a, undefined], [0.75, 0.36, 0xd8cfbf, 'GIFTS']];
-    for (const [bz, bw, bc, label] of boxSpec) { const b = storageBox(ctx, bw, 0.24, 0.34, bc, { label }); b.position.set(EAST - 0.21, ROD_Y + 0.4625, bz); b.rotation.y = -Math.PI / 2; g.add(b); }
+    for (const [bz, bw, bc, label] of boxSpec) { const b = storageBox(ctx, bw, 0.22, 0.34, bc, { label }); b.position.set(EAST - 0.21, ROD_Y + 0.4625, bz); b.rotation.y = -Math.PI / 2; g.add(b); }
     place(g, 0, y, 0, 0);
     addStatic(ctx, g, [{ size: [0.52, UNIT_H, 2.8], center: [EAST - 0.26, UNIT_H / 2, 0] }], { surface: 'fabric' });
   }

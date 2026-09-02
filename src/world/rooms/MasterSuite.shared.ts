@@ -249,6 +249,39 @@ export function upholsteredBench(ctx: Ctx, x: number, z: number, rotY: number, l
   placeStatic(ctx, g, x, z, rotY, [{ size: [len, 0.52, 0.42], center: [0, 0.26, 0] }], 'fabric');
 }
 
+/** Potted plant batched into the static scenery (all leaves of a kind share one draw call). */
+export function staticPlant(ctx: Ctx, x: number, y: number, z: number, size = 1.0, opts: { potColor?: number; kind?: 'leaf' | 'bush'; collider?: boolean } = {}) {
+  const mats = ctx.mats;
+  const g = new THREE.Group();
+  const potH = size * 0.28, potR = size * 0.16;
+  const pot = Prim.lathe([[potR * 0.7, 0], [potR * 0.95, 0], [potR, potH * 0.9], [potR * 1.08, potH * 0.9], [potR * 1.08, potH], [potR * 0.9, potH], [potR * 0.9, potH * 0.85], [0, potH * 0.85]], mats.solid(opts.potColor ?? 0xb5573e, { roughness: 0.8 }), { segments: 20 });
+  g.add(pot);
+  const soil = Prim.cylinder(potR * 0.88, potR * 0.88, 0.01, mats.soil, { cast: false }); soil.position.y = potH * 0.85; g.add(soil);
+  const leafMat = mats.image(ctx.tex.foliage(opts.kind ?? 'leaf'), { transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8, envMapIntensity: 0.3 });
+  const stemMat = mats.solid(0x4c6b3c, { roughness: 0.8 });
+  const rnd = ctx.rng;
+  const n = 5 + Math.floor(rnd() * 3);
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + rnd() * 0.5;
+    const tilt = 0.35 + rnd() * 0.45;
+    const len = size * (0.45 + rnd() * 0.35);
+    const stem = Prim.cylinder(0.006, 0.01, len, stemMat, { segments: 6 });
+    stem.position.set(Math.sin(a) * len * 0.5 * Math.sin(tilt), potH * 0.85 + Math.cos(tilt) * len * 0.5, Math.cos(a) * len * 0.5 * Math.sin(tilt));
+    stem.rotation.set(Math.cos(a) * tilt, 0, -Math.sin(a) * tilt);
+    g.add(stem);
+    const card = Prim.quad(size * 0.5, size * 0.5, leafMat, { keepUV: true });
+    card.position.set(Math.sin(a) * len * Math.sin(tilt) * 0.95, potH * 0.85 + Math.cos(tilt) * len * 0.95 + size * 0.1, Math.cos(a) * len * Math.sin(tilt) * 0.95);
+    card.rotation.y = a + Math.PI / 2 + (rnd() - 0.5);
+    card.rotation.x = (rnd() - 0.5) * 0.6;
+    g.add(card);
+    const card2 = card.clone(); card2.rotation.y += Math.PI / 2; g.add(card2);
+  }
+  g.position.set(x, y, z);
+  g.rotation.y = rnd() * Math.PI * 2;
+  addStatic(ctx, g);
+  if (opts.collider !== false) ctx.physics.addCylinder({ x, y: y + potH / 2, z }, potR, potH);
+}
+
 export type BottleKind = 'pump' | 'squeeze' | 'jar' | 'spray' | 'tube';
 
 /** Toiletry bottle; origin at the bottom centre. Returns the group and its collider extents. */

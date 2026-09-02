@@ -262,7 +262,7 @@ function buildMirrorAndSconces(ctx: Ctx, cx: number) {
     const sphere = new THREE.SphereGeometry(0.06, 20, 14);
     sphere.translate(sx, my + 0.04, NZ + TILE_T + 0.11);
     globeGeos.push(sphere);
-    positions.push(new THREE.Vector3(sx, my + 0.04, NZ + TILE_T + 0.14));
+    positions.push(new THREE.Vector3(sx, my + 0.04, NZ + TILE_T + 0.2));
   }
   addStatic(ctx, sg);
   const merged = BufferGeometryUtils.mergeGeometries(globeGeos, false)!;
@@ -271,7 +271,7 @@ function buildMirrorAndSconces(ctx: Ctx, cx: number) {
   globes.castShadow = false;
   ctx.dynamic.add(globes);
   for (const p of positions) {
-    ctx.lights.point(p.x, p.y, p.z, { group: LIGHT_GROUP, intensity: 4.5, distance: 4.5, color: 0xffe9d0, emissives: [{ mesh: globes, on: bulbs.on, off: bulbs.off }] });
+    ctx.lights.point(p.x, p.y, p.z, { group: LIGHT_GROUP, intensity: 3.2, distance: 4.5, color: 0xffe9d0, emissives: [{ mesh: globes, on: bulbs.on, off: bulbs.off }] });
   }
 }
 
@@ -354,10 +354,11 @@ export function buildToilet(ctx: Ctx, x: number, z: number, rotY: number) {
   const dyn = new THREE.Group();
   place(dyn, x, F, z, rotY);
   ctx.dynamic.add(dyn);
-  const lever = new THREE.Group();
-  lever.position.set(-0.19, 0.74, -0.03);
-  const lbase = Prim.cylinder(0.013, 0.013, 0.012, m.chrome, { segments: 12 }); lbase.rotation.x = Math.PI / 2; lbase.position.z = -0.006; lever.add(lbase);
-  const larm = Prim.rbox(0.075, 0.012, 0.01, 0.004, m.chrome, { segments: 1 }); larm.position.set(0.04, 0, -0.017); lever.add(larm);
+  const leverParts = new THREE.Group();
+  const lbase = Prim.cylinder(0.013, 0.013, 0.012, m.chrome, { segments: 12 }); lbase.rotation.x = Math.PI / 2; lbase.position.z = -0.006; leverParts.add(lbase);
+  const larm = Prim.rbox(0.075, 0.012, 0.01, 0.004, m.chrome, { segments: 1 }); larm.position.set(-0.04, 0, -0.017); leverParts.add(larm);
+  const lever = mergeByMaterial(leverParts);
+  lever.position.set(-0.2, 0.74, -0.03); // outer corner of the tank, clear of the raised lid
   dyn.add(lever);
   const swirl = new THREE.Group();
   swirl.position.set(0, 0.29, BZ);
@@ -396,8 +397,8 @@ export function buildTub(ctx: Ctx) {
   const apronW = Prim.box(0.03, H - 0.035, L, cer); apronW.position.set(-W / 2 + 0.015, (H - 0.035) / 2, 0); g.add(apronW);
   const apronS = Prim.box(W, H - 0.035, 0.03, cer); apronS.position.set(0, (H - 0.035) / 2, L / 2 - 0.015); g.add(apronS);
   const fill = Prim.box(W - 0.08, 0.08, L - 0.08, cer, { cast: false }); fill.position.set(0, 0.04, 0); g.add(fill);
-  const drain = Prim.cylinder(0.03, 0.03, 0.004, m.chrome, { segments: 16, cast: false }); drain.position.set(0, 0.102, -0.55); g.add(drain);
-  const overflow = Prim.cylinder(0.035, 0.035, 0.008, m.chrome, { segments: 16 }); overflow.rotation.x = Math.PI / 2; overflow.position.set(0, 0.36, -L / 2 + 0.06); g.add(overflow);
+  const drain = Prim.cylinder(0.03, 0.03, 0.004, m.chrome, { segments: 16, cast: false }); drain.position.set(0, 0.102, -0.38); g.add(drain);
+  const overflow = Prim.cylinder(0.035, 0.035, 0.008, m.chrome, { segments: 16 }); overflow.rotation.x = Math.PI / 2; overflow.position.set(0, 0.36, -L / 2 + 0.13); g.add(overflow);
   // a folded washcloth and a rubber duck on the rim
   const cloth = Prim.rbox(0.14, 0.02, 0.1, 0.008, m.fabric(0x9cb7c3), { segments: 2 }); cloth.position.set(-W / 2 + 0.05, H + 0.01, L / 2 - 0.12); cloth.rotation.y = 0.2; g.add(cloth);
   const duckMat = m.solid(0xf4c430, { roughness: 0.4 });
@@ -438,7 +439,7 @@ function buildShowerFixtures(ctx: Ctx, tubCx: number, tubCz: number) {
   const ball = Prim.sphere(0.02, ch, { segments: 12 }); ball.position.set(0, headY, headZ); sg.add(ball);
   const head = Prim.lathe([[0, 0], [0.075, 0], [0.085, 0.015], [0.08, 0.035], [0.02, 0.05], [0, 0.05]], ch, { segments: 28 });
   head.position.set(0, headY - 0.03, headZ + 0.01); head.rotation.x = -0.35; sg.add(head);
-  const face = Prim.cylinder(0.062, 0.062, 0.003, m.darkMetal, { segments: 24, cast: false });
+  const face = Prim.cylinder(0.062, 0.062, 0.008, m.darkMetal, { segments: 24, cast: false });
   face.position.set(0, headY - 0.03, headZ + 0.01); face.rotation.x = -0.35; sg.add(face);
   const fixtures = mergeByMaterial(sg);
   place(fixtures, SHOWER_X, F, NZ, 0);
