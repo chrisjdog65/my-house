@@ -95,6 +95,10 @@ export class InteractableRegistry {
       if (it.getPrompt() === null) continue;
       const r = it.radius ?? 2.6;
       if (it.focus) _pos.copy(it.focus); else it.object.getWorldPosition(_pos);
+      // Height gate: floors are ~3 m apart, so anything more than head-height above the player's
+      // feet (or below them) belongs to another storey and must not offer a prompt through the slab.
+      const dy = _pos.y - playerPos.y;
+      if (dy > 2.2 || dy < -1.2) continue;
       _dir.subVectors(_pos, playerPos);
       _dir.y = 0;
       const d = _dir.length();
@@ -103,7 +107,10 @@ export class InteractableRegistry {
       const facing = _dir.dot(playerForward);
       if (facing < 0.2 && d > 0.9) continue;
       const score = d - facing * 0.5;
-      if (score < bestScore) { bestScore = score; best = it; }
+      if (score >= bestScore) continue;
+      // don't offer a prompt for something behind a wall
+      if (occluded && d > 0.6 && occluded(playerPos.clone().add(new THREE.Vector3(0, 1.2, 0)), _pos.clone())) continue;
+      bestScore = score; best = it;
     }
     return best;
   }
