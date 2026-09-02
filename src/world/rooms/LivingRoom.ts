@@ -74,7 +74,7 @@ export function buildLivingRoom(ctx: Ctx, structure: Structure) {
   curtains(ctx, -3.5, y0, frontFace - 0.04, Math.PI, 1.5, 2.3, 0xb9a58a);
 
   // ------------------------------------------------------------------ plants
-  plant(ctx, -1.92, y0, 5.58, 1.3, { potColor: 0x5f6b63 });
+  plant(ctx, -2.35, y0, 5.40, 0.9, { potColor: 0x5f6b63 });
   plant(ctx, -7.55, y0, 4.78, 0.9, { kind: 'bush', potColor: 0xb5573e });
   plant(ctx, -2.92, y0 + 0.8, backFace + 0.2, 0.42, { potColor: 0xe6dccb });
 }
@@ -151,25 +151,25 @@ function buildFireplace(ctx: Ctx, wallX: number, y0: number, zc: number, ceilH: 
   // vase with dried stems at the far end of the shelf, clear of the TV (which spans z +-0.56 above the mantel)
   const VZ = 0.86;
   const vase = Prim.lathe([[0, 0], [0.035, 0], [0.045, 0.06], [0.03, 0.14], [0.02, 0.18], [0.024, 0.2], [0.0, 0.2]], mats.solid(0x6f8a7b, { roughness: 0.25, envMapIntensity: 0.9, physical: true, clearcoat: 0.6 }), { segments: 20 });
-  vase.position.set(0.37, top, VZ);
+  vase.position.set(0.43, top, VZ);
   fp.add(vase);
   const stemMat = mats.solid(0x8a6f3c, { roughness: 0.9 });
   for (let i = 0; i < 4; i++) {
     const a = i * 1.6, tilt = 0.12 + i * 0.05;
     const stem = Prim.cylinder(0.002, 0.003, 0.3, stemMat, { segments: 6 });
-    stem.position.set(0.37 + Math.sin(a) * 0.04, top + 0.2 + 0.14, VZ + Math.cos(a) * 0.04);
+    stem.position.set(0.43 + Math.sin(a) * 0.03, top + 0.2 + 0.14, VZ + Math.cos(a) * 0.03);
     stem.rotation.set(Math.cos(a) * tilt, 0, -Math.sin(a) * tilt);
     fp.add(stem);
     const head = Prim.sphere(0.012, mats.solid(0xd8c39a, { roughness: 0.9 }), { segments: 8 });
-    head.position.set(0.37 + Math.sin(a) * 0.075, top + 0.2 + 0.29, VZ + Math.cos(a) * 0.075);
+    head.position.set(0.43 + Math.sin(a) * 0.045, top + 0.2 + 0.29, VZ + Math.cos(a) * 0.045);
     fp.add(head);
   }
   // two stacked books on the mantel
   const b1 = Prim.rbox(0.13, 0.03, 0.19, 0.004, mats.solid(0x4b3a6b, { roughness: 0.6 }));
-  b1.position.set(0.36, top + 0.015, -0.3);
+  b1.position.set(0.425, top + 0.015, -0.3);
   fp.add(b1);
   const b2 = Prim.rbox(0.12, 0.028, 0.17, 0.004, mats.solid(0x9c4a3b, { roughness: 0.6 }));
-  b2.position.set(0.365, top + 0.03 + 0.014, -0.29);
+  b2.position.set(0.428, top + 0.03 + 0.014, -0.29);
   b2.rotation.y = 0.12;
   fp.add(b2);
   // mantel clock plinth (the clock itself is a small wallClock, dynamic, added below)
@@ -731,7 +731,7 @@ function buildBookshelf(ctx: Ctx, x: number, y: number, z: number, rotY: number)
     // [compartment bottom y, centre x, width, height, seed]
     [0.08, -0.06, 0.8, 0.25, 11],
     [0.3725, -0.2, 0.52, 0.27, 12],
-    [0.7725, 0.0, 0.92, 0.26, 13],
+    [0.7725, -0.14, 0.60, 0.26, 13],
     [1.1725, 0.18, 0.56, 0.25, 14],
     [1.5725, -0.15, 0.62, 0.24, 15],
   ];
