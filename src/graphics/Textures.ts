@@ -355,19 +355,57 @@ export class TextureLibrary {
   photo(index: number): THREE.Texture {
     return this.canvas(`photo-${index}`, 512, 384, (ctx, w, h) => {
       const rnd = mulberry32(500 + index * 13);
-      const g = ctx.createLinearGradient(0, 0, w, h);
-      const hues = [[200, 60], [30, 70], [120, 40], [280, 40]][index % 4];
-      g.addColorStop(0, `hsl(${hues[0]}, ${hues[1]}%, 75%)`); g.addColorStop(1, `hsl(${hues[0] + 40}, ${hues[1]}%, 45%)`);
-      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
-      // silhouettes
-      const n = 1 + Math.floor(rnd() * 3);
-      for (let i = 0; i < n; i++) {
-        const cx = w * (0.25 + (i + 0.5) / n * 0.5), s = 0.6 + rnd() * 0.5;
-        ctx.fillStyle = 'rgba(20,20,30,0.85)';
-        ctx.beginPath(); ctx.arc(cx, h * 0.45, 40 * s, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(cx, h * 0.95, 80 * s, 110 * s, 0, Math.PI, Math.PI * 2); ctx.fill();
+      // white mat border, as a framed print would have
+      ctx.fillStyle = '#f6f4ef'; ctx.fillRect(0, 0, w, h);
+      const m = Math.round(w * 0.055);
+      const iw = w - 2 * m, ih = h - 2 * m;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(m, m, iw, ih); ctx.clip();
+      const kind = index % 3;
+      if (kind === 0) {
+        // sunlit landscape: sky, hills, a treeline
+        const sky = ctx.createLinearGradient(0, m, 0, m + ih);
+        sky.addColorStop(0, '#8fb6dd'); sky.addColorStop(0.55, '#d9e4ec'); sky.addColorStop(1, '#e8dfc8');
+        ctx.fillStyle = sky; ctx.fillRect(m, m, iw, ih);
+        ctx.fillStyle = 'rgba(255,246,214,0.9)';
+        ctx.beginPath(); ctx.arc(m + iw * (0.25 + rnd() * 0.5), m + ih * 0.34, ih * 0.07, 0, Math.PI * 2); ctx.fill();
+        for (let i = 0; i < 3; i++) {
+          ctx.fillStyle = ['#7f9a72', '#5e7d58', '#40573e'][i];
+          ctx.beginPath(); ctx.moveTo(m, m + ih);
+          for (let x = 0; x <= iw; x += 12) ctx.lineTo(m + x, m + ih * (0.62 + i * 0.11) + Math.sin(x * 0.02 + i * 2) * ih * 0.05);
+          ctx.lineTo(m + iw, m + ih); ctx.closePath(); ctx.fill();
+        }
+      } else if (kind === 1) {
+        // group portrait: warm interior wash with soft figures
+        const bg = ctx.createLinearGradient(0, m, 0, m + ih);
+        bg.addColorStop(0, '#cbb79c'); bg.addColorStop(1, '#8d7a63');
+        ctx.fillStyle = bg; ctx.fillRect(m, m, iw, ih);
+        const n = 2 + Math.floor(rnd() * 2);
+        for (let i = 0; i < n; i++) {
+          const cx = m + iw * ((i + 0.5) / n), s = 0.85 + rnd() * 0.3;
+          ctx.fillStyle = ['#48413c', '#5a4e46', '#3d4550'][i % 3];
+          ctx.beginPath(); ctx.ellipse(cx, m + ih * 1.06, iw * 0.15 * s, ih * 0.42 * s, 0, Math.PI, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#d8b294';
+          ctx.beginPath(); ctx.arc(cx, m + ih * (0.5 - 0.04 * s), ih * 0.1 * s, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = 'rgba(60,45,35,0.85)';
+          ctx.beginPath(); ctx.arc(cx, m + ih * (0.46 - 0.04 * s), ih * 0.1 * s, Math.PI, Math.PI * 2); ctx.fill();
+        }
+      } else {
+        // seaside: horizon, water, sand
+        const sky = ctx.createLinearGradient(0, m, 0, m + ih);
+        sky.addColorStop(0, '#a8c8e0'); sky.addColorStop(1, '#f2e3c8');
+        ctx.fillStyle = sky; ctx.fillRect(m, m, iw, ih * 0.58);
+        ctx.fillStyle = '#5b86a6'; ctx.fillRect(m, m + ih * 0.58, iw, ih * 0.22);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        for (let i = 0; i < 14; i++) { const y = m + ih * (0.59 + rnd() * 0.2); ctx.fillRect(m + rnd() * iw, y, iw * (0.04 + rnd() * 0.08), 2); }
+        ctx.fillStyle = '#ddc9a3'; ctx.fillRect(m, m + ih * 0.8, iw, ih * 0.2);
       }
-      ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(0, 0, w, h * 0.08);
+      // gentle vignette + film warmth
+      const vig = ctx.createRadialGradient(m + iw / 2, m + ih / 2, ih * 0.2, m + iw / 2, m + ih / 2, ih * 0.75);
+      vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(30,20,10,0.28)');
+      ctx.fillStyle = vig; ctx.fillRect(m, m, iw, ih);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 2; ctx.strokeRect(m, m, iw, ih);
     });
   }
 
