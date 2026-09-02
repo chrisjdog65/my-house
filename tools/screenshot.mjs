@@ -24,6 +24,11 @@ const ONLY = get('--only', '').split(',').filter(Boolean);
 const CUSTOM = args.filter((a, i) => args[i - 1] === '--custom');
 const TIME = get('--t', '');
 const QUALITY = get('--q', 'high');
+// Debug hook: a JS file whose body runs in the page (with `game` bound to window.__game) after the
+// scene is ready and before the screenshot. Used to isolate shading from geometry, e.g. swapping the
+// sky for a flat colour so any hole in the walls or ceiling shows up as that colour.
+const INJECT = get('--inject', '');
+const INJECT_SRC = INJECT ? fs.readFileSync(INJECT, 'utf8') : '';
 
 // name: [x, y, z, playerYaw, camYaw, camPitch, dist, timeOfDay?]
 // camYaw: camera orbit angle; the camera sits at pivot + (sin(yaw), ., cos(yaw)) * dist and looks the opposite way.
@@ -127,6 +132,14 @@ async function main() {
         throw new Error('timed out waiting for scene: ' + lbl);
       }
       await page.waitForTimeout(400);
+      if (INJECT_SRC) {
+        const r = await page.evaluate(async (src) => {
+          const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+          try { return String((await new AsyncFunction('game', src)(window.__game)) ?? 'ok'); } catch (e) { return 'INJECT ERROR: ' + e.message; }
+        }, INJECT_SRC);
+        console.log(`   inject → ${r}`);
+        await page.waitForTimeout(1200);
+      }
       const file = path.join(OUT, `${name}.png`);
       await page.screenshot({ path: file, type: 'png', timeout: 120000 });
       const stats = await page.evaluate(() => window.__stats);

@@ -61,6 +61,10 @@ async function main() {
   const mats = new MaterialLibrary(tex);
 
   const daylight = new DayLight(engine.renderer, engine.scene);
+  // Materials carry the environment map themselves; leaving it to scene.environment makes three
+  // replace each material's envMapIntensity with the scene-wide one. Must happen before the world
+  // is built, since static batching clones whatever the materials look like at build time.
+  mats.setEnvironment(daylight.envMap);
   const poolSizes = q === 'low' ? { points: 6, spots: 3, shadows: 0 } : q === 'medium' ? { points: 8, spots: 4, shadows: 0 } : q === 'high' ? { points: 10, spots: 6, shadows: 1 } : { points: 12, spots: 8, shadows: 2 };
   const lights = new LightManager(engine.scene, poolSizes);
   const interact = new InteractableRegistry();

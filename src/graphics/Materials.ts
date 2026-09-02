@@ -41,7 +41,33 @@ export type AnyStandard = THREE.MeshStandardMaterial | THREE.MeshPhysicalMateria
 
 export class MaterialLibrary {
   private cache = new Map<string, THREE.Material>();
+  /**
+   * The scene environment map, assigned to every material this library hands out.
+   *
+   * This has to be per-material rather than left to `scene.environment`: when a standard material
+   * has no `envMap` of its own, three overwrites its `envMapIntensity` uniform with the scene's
+   * `environmentIntensity` (WebGLRenderer, "material.envMap === null && scene.environment !== null"),
+   * so every per-material value tuned here would be silently ignored and each surface would take the
+   * full sky irradiance. Since three's diffuse IBL is close to a whole-environment average, that put
+   * a pale blue sky cast on interior surfaces facing away from the sky — ceilings worst of all.
+   */
+  private env: THREE.Texture | null = null;
   constructor(readonly textures: TextureLibrary) {}
+
+  /**
+   * Point every material at the environment map. The texture identity must stay stable across
+   * regeneration (the PMREM is rendered back into the same target) because static batching clones
+   * materials, and those clones keep whichever texture they were given.
+   */
+  setEnvironment(env: THREE.Texture | null) {
+    this.env = env;
+    for (const m of this.cache.values()) {
+      if ((m as AnyStandard).isMeshStandardMaterial) {
+        (m as AnyStandard).envMap = env;
+        m.needsUpdate = true;
+      }
+    }
+  }
 
   /** Textured PBR material by procedural texture name. Cached by (name + opts). */
   tex(name: string, opts: MatOpts = {}): AnyStandard {
@@ -60,6 +86,7 @@ export class MaterialLibrary {
       roughness: opts.roughness ?? 1,
       metalness: opts.metalness ?? 1,
       normalScale: new THREE.Vector2(opts.normalScale ?? 1, opts.normalScale ?? 1),
+      envMap: this.env,
       envMapIntensity: opts.envMapIntensity ?? 0.6,
       aoMapIntensity: opts.aoIntensity ?? 1,
       side: opts.side ?? THREE.FrontSide,
@@ -91,6 +118,7 @@ export class MaterialLibrary {
       color,
       roughness: opts.roughness ?? 0.6,
       metalness: opts.metalness ?? 0,
+      envMap: this.env,
       envMapIntensity: opts.envMapIntensity ?? 0.6,
       side: opts.side ?? THREE.FrontSide,
       transparent: opts.transparent ?? (opts.opacity !== undefined && opts.opacity < 1),
@@ -125,6 +153,7 @@ export class MaterialLibrary {
       metalness: 0,
       transparent: true,
       opacity: opts.opacity ?? 0.18,
+      envMap: this.env,
       envMapIntensity: 1.2,
       clearcoat: 1,
       clearcoatRoughness: 0.03,
@@ -142,7 +171,7 @@ export class MaterialLibrary {
     const key = 'emi:' + new THREE.Color(color).getHexString() + ':' + intensity + ':' + new THREE.Color(base).getHexString();
     const hit = this.cache.get(key);
     if (hit) return hit as THREE.MeshStandardMaterial;
-    const m = new THREE.MeshStandardMaterial({ color: base, emissive: color, emissiveIntensity: intensity, roughness: 0.5, metalness: 0 });
+    const m = new THREE.MeshStandardMaterial({ color: base, emissive: color, emissiveIntensity: intensity, roughness: 0.5, metalness: 0, envMap: this.env, envMapIntensity: 0.4 });
     m.userData.texSize = 1;
     m.name = key;
     this.cache.set(key, m);
@@ -156,6 +185,7 @@ export class MaterialLibrary {
       color: opts.color ?? 0xffffff,
       roughness: opts.roughness ?? 0.8,
       metalness: opts.metalness ?? 0,
+      envMap: this.env,
       envMapIntensity: opts.envMapIntensity ?? 0.4,
       side: opts.side ?? THREE.FrontSide,
       transparent: opts.transparent ?? false,
@@ -184,7 +214,10 @@ export class MaterialLibrary {
   wall(color: THREE.ColorRepresentation = 0xf3efe6) { return this.tex('plaster', { color, normalScale: 0.35, envMapIntensity: 0.35 }); }
   // Very low env influence: the environment map is unoccluded sky, so a ceiling that samples it
   // reads blue in rooms with little artificial light (most obviously in the basement).
-  get ceiling() { return this.tex('ceiling', { color: 0xfafaf7, normalScale: 0.4, envMapIntensity: 0.06 }); }
+  // No environment influence at all: three's diffuse IBL is a near-average of the whole environment,
+  // so an unoccluded sky tints every downward-facing surface pale blue no matter which way it points.
+  // Ceilings are lit by the hemisphere ground bounce and the room's own fixtures instead.
+  get ceiling() { return this.tex('ceiling', { color: 0xfafaf7, normalScale: 0.4, envMapIntensity: 0 }); }
   get brick() { return this.tex('brick', { normalScale: 1.0, envMapIntensity: 0.4 }); }
   get brickPale() { return this.tex('brickPale', { normalScale: 1.0, envMapIntensity: 0.4 }); }
   get stone() { return this.tex('stone', { normalScale: 1.0, envMapIntensity: 0.4 }); }

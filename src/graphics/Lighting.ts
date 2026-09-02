@@ -205,7 +205,15 @@ export class DayLight {
   ambient: THREE.AmbientLight;
   sunDir = new THREE.Vector3(0, 1, 0);
   private pmrem: THREE.PMREMGenerator;
+  /**
+   * Reused across regenerations so `envTarget.texture` keeps the same identity for the whole run.
+   * Materials hold this texture directly (see MaterialLibrary.setEnvironment) and static batching
+   * clones them, so handing out a fresh texture on every time-of-day change would strand the clones
+   * on a disposed one.
+   */
   private envTarget: THREE.WebGLRenderTarget | null = null;
+  /** The prefiltered environment map, for materials that carry it themselves. */
+  get envMap(): THREE.Texture | null { return this.envTarget ? this.envTarget.texture : null; }
   private lastEnvHour = -99;
   /** 0 (night) .. 1 (full day) */
   daylight = 1;
@@ -263,7 +271,10 @@ export class DayLight {
     scene.add(this.moon);
     scene.add(this.moon.target);
 
-    this.hemi = new THREE.HemisphereLight(0xbfd8ff, 0x6b5a3e, 0.55);
+    // The ground half is the only fill a downward-facing surface gets from this light, so it carries
+    // every ceiling in the house. A dark soil brown left ceilings so dim that the sky-blue
+    // environment irradiance became their main light source; a pale warm bounce keeps them neutral.
+    this.hemi = new THREE.HemisphereLight(0xbfd8ff, 0xa8a094, 0.55);
     scene.add(this.hemi);
     this.ambient = new THREE.AmbientLight(0xffffff, 0.08);
     scene.add(this.ambient);
@@ -339,7 +350,6 @@ export class DayLight {
    * PBR material, so we build a well-behaved analytic sky instead.)
    */
   private updateEnvironment() {
-    const old = this.envTarget;
     const W = 256, H = 128;
     if (!this.equirect) {
       this.equirect = new THREE.DataTexture(new Float32Array(W * H * 4), W, H, THREE.RGBAFormat, THREE.FloatType);
@@ -384,9 +394,10 @@ export class DayLight {
       }
     }
     this.equirect.needsUpdate = true;
-    this.envTarget = this.pmrem.fromEquirectangular(this.equirect);
+    this.envTarget = this.pmrem.fromEquirectangular(this.equirect, this.envTarget ?? undefined);
     this.scene.environment = this.envTarget.texture;
+    // Only reaches materials built outside the material library; the library's own materials carry
+    // this map with their individual envMapIntensity.
     this.scene.environmentIntensity = 0.55 + 0.45 * d;
-    if (old) old.dispose();
   }
 }
