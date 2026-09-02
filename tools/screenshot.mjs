@@ -145,4 +145,4 @@ async function main() {
 
 main().catch((e) => { console.error(e); process.exit(1); });
 // never leave a headless browser behind
-setTimeout(() => { console.error('capture run exceeded 40 minutes; aborting'); process.exit(2); }, 40 * 60 * 1000).unref();
+setTimeout(() => { console.error('capture run exceeded 3 hours; aborting'); process.exit(2); }, 3 * 60 * 60 * 1000).unref();
