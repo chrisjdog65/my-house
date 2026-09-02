@@ -34,4 +34,6 @@ export interface Ctx {
   toast(msg: string): void;
   /** deterministic RNG for placement variety */
   rng(): number;
+  /** carry/throw system; assigned after the player exists, so room builders see it at runtime only */
+  carry?: { pickUp(p: any): void; drop(): void; throw(dir: THREE.Vector3, power?: number): void; held: any };
 }

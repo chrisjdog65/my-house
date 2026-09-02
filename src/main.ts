@@ -99,7 +99,7 @@ async function main() {
   engine.scene.add(player.character.root);
   const camera = new ThirdPersonCamera(engine.camera, physics, input, player);
   const carry = new CarrySystem(physics, audio);
-  (ctx as any).carry = carry;
+  ctx.carry = carry;
   carry.onChange = (p) => ui.setHeld(p ? p.name : null);
 
   // flashlight

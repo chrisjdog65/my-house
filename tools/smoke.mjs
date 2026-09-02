@@ -86,7 +86,56 @@ try {
     const items = window.__game.ctx.interact.items.filter((i) => i.constructor && i.constructor.name === 'Pickup');
     return items.length;
   });
-  check('pickups exist', pick > 0, `${pick} pickups (0 is expected while rooms are stubs)`);
+  check('pickups exist', pick > 5, `${pick} pickups`);
+  // --- interaction coverage: light switch, pickup + throw, fireplace, a door on each floor ---
+  const findByPrompt = async (needle) => page.evaluate((n) => {
+    const items = window.__game.ctx.interact.items;
+    for (let i = 0; i < items.length; i++) {
+      let p = null; try { p = items[i].getPrompt(); } catch { /* ignore */ }
+      if (p && p.toLowerCase().includes(n)) return i;
+    }
+    return -1;
+  }, needle);
+  const interactAt = (i) => page.evaluate((idx) => {
+    const g = window.__game; const it = g.ctx.interact.items[idx];
+    const p = g.player.position.clone();
+    it.interact({ playerPos: p, cameraDir: new p.constructor(0, 0, 1), cameraPos: p });
+    return it.getPrompt();
+  }, i);
+
+  const swIdx = await findByPrompt('turn on');
+  if (swIdx >= 0) {
+    const before = await page.evaluate((i) => window.__game.ctx.interact.items[i].getPrompt(), swIdx);
+    const after = await interactAt(swIdx);
+    check('a light toggles', before !== after, `"${before}" -> "${after}"`);
+  } else check('a light toggles', false, 'no toggleable light found');
+
+  const fireIdx = await findByPrompt('fireplace');
+  if (fireIdx >= 0) {
+    const after = await interactAt(fireIdx);
+    check('fireplace lights', /extinguish|put out/i.test(after || ''), `prompt now "${after}"`);
+  } else check('fireplace lights', false, 'no fireplace interactable');
+
+  const pickIdx = await findByPrompt('pick up');
+  if (pickIdx >= 0) {
+    await page.evaluate((i) => { const g = window.__game; const it = g.ctx.interact.items[i]; g.ctx.carry.pickUp(it); }, pickIdx);
+    await page.waitForTimeout(400);
+    const held = await page.evaluate(() => window.__game.ctx.carry.held ? window.__game.ctx.carry.held.name : null);
+    check('object can be carried', !!held, `holding ${held}`);
+    const p0 = await page.evaluate(() => { const h = window.__game.ctx.carry.held; const t = h.dyn.body.translation(); return [t.x, t.y, t.z]; });
+    await page.evaluate(() => window.__game.ctx.carry.throw(new window.__game.player.position.constructor(0, 0.2, 1), 9));
+    await page.waitForTimeout(900);
+    const p1 = await page.evaluate((idx) => { const t = window.__game.ctx.interact.items[idx].dyn.body.translation(); return [t.x, t.y, t.z]; }, pickIdx);
+    const moved = Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]);
+    check('thrown object flies', moved > 0.3, `travelled ${moved.toFixed(2)} m`);
+  } else check('object can be carried', false, 'no pickup found');
+
+  const interior = await page.evaluate(() => {
+    const doors = window.__game.world.structure.doors;
+    return Array.from(doors.keys());
+  });
+  check('every planned door exists', interior.length >= 15, `${interior.length} doors: ${interior.slice(0, 4).join(', ')}…`);
+
   const stats = await page.evaluate(() => window.__stats);
   check('no runtime errors', errors.length === 0 && stats.errors.length === 0, [...errors, ...stats.errors].slice(0, 3).join(' | '));
   console.log(`stats: ${JSON.stringify({ calls: stats.calls, triangles: stats.triangles, interactables: stats.interactables, lights: stats.lights })}`);

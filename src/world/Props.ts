@@ -78,7 +78,7 @@ export class Pickup implements Interactable {
   }
 
   interact() {
-    (this.ctx as any).carry?.pickUp(this);
+    this.ctx.carry?.pickUp(this);
   }
 }
 
