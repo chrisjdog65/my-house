@@ -155,6 +155,100 @@ export function wickerBasket(ctx: Ctx, r: number, h: number, color = 0xb99a6b, o
   return g;
 }
 
+/** Image quad for labels / screens (keeps its own UVs). `emissive` makes it glow (digits, screens). */
+export function labelQuad(ctx: Ctx, tex: THREE.Texture, w: number, h: number, opts: { emissive?: number } = {}): THREE.Mesh {
+  const mat = opts.emissive !== undefined
+    ? ctx.mats.image(tex, { emissive: 0xffffff, emissiveIntensity: opts.emissive, roughness: 0.4, envMapIntensity: 0.2 })
+    : ctx.mats.image(tex, { roughness: 0.8, envMapIntensity: 0.2 });
+  return Prim.quad(w, h, mat, { keepUV: true, cast: false });
+}
+
+/** Towel folded over a bar: the bar runs along local x through the origin, the towel hangs below (front +z). */
+export function drapedTowel(ctx: Ctx, w: number, drop: number, color: number, barR = 0.012): THREE.Group {
+  const g = new THREE.Group();
+  const fab = ctx.mats.fabric(color);
+  const t = 0.02;
+  const top = Prim.cylinder(barR + t, barR + t, w, fab, { segments: 12 }); top.rotation.z = Math.PI / 2; g.add(top);
+  const front = Prim.rbox(w, drop, t, 0.008, fab); front.position.set(0, -drop / 2 + 0.01, barR + t / 2); g.add(front);
+  const back = Prim.rbox(w, drop * 0.85, t, 0.008, fab); back.position.set(0, -drop * 0.425 + 0.01, -(barR + t / 2)); g.add(back);
+  const stripe = Prim.box(w + 0.002, 0.03, 0.004, ctx.mats.fabric(new THREE.Color(color).multiplyScalar(0.75).getHex()), { cast: false });
+  stripe.position.set(0, -drop + 0.08, barR + t + 0.002); g.add(stripe);
+  return g;
+}
+
+export type ShoeKind = 'sneaker' | 'heel' | 'boot' | 'loafer' | 'flat';
+
+/** A single shoe, toe toward +z, resting on y=0, centred on its length. */
+export function shoe(ctx: Ctx, color: number, kind: ShoeKind): THREE.Group {
+  const mats = ctx.mats;
+  const g = new THREE.Group();
+  const upper = kind === 'sneaker' ? mats.fabric(color) : mats.leather(color);
+  const rubber = mats.solid(0xf4f2ec, { roughness: 0.6 });
+  if (kind === 'sneaker') {
+    const sole = Prim.rbox(0.095, 0.03, 0.27, 0.012, rubber); sole.position.y = 0.015; g.add(sole);
+    const body = Prim.rbox(0.085, 0.07, 0.24, 0.03, upper); body.position.set(0, 0.06, -0.005); g.add(body);
+    const collar = Prim.rbox(0.07, 0.05, 0.1, 0.02, upper); collar.position.set(0, 0.105, -0.07); g.add(collar);
+    const stripe = Prim.box(0.09, 0.012, 0.09, rubber, { cast: false }); stripe.position.set(0, 0.075, 0.02); g.add(stripe);
+  } else if (kind === 'heel') {
+    const dark = mats.leather(0x2a1e18);
+    const sole = Prim.rbox(0.075, 0.012, 0.23, 0.005, dark); sole.rotation.x = -0.28; sole.position.set(0, 0.05, 0); g.add(sole);
+    const toe = Prim.rbox(0.07, 0.04, 0.1, 0.02, upper); toe.rotation.x = -0.28; toe.position.set(0, 0.058, 0.065); g.add(toe);
+    const counter = Prim.rbox(0.068, 0.05, 0.07, 0.015, upper); counter.position.set(0, 0.105, -0.085); g.add(counter);
+    const pin = Prim.cylinder(0.008, 0.006, 0.08, dark, { segments: 8 }); pin.position.set(0, 0.04, -0.1); g.add(pin);
+  } else if (kind === 'boot') {
+    const sole = Prim.rbox(0.095, 0.03, 0.28, 0.012, mats.solid(0x2a2320, { roughness: 0.7 })); sole.position.y = 0.015; g.add(sole);
+    const body = Prim.rbox(0.088, 0.08, 0.26, 0.03, upper); body.position.set(0, 0.065, 0); g.add(body);
+    const shaft = Prim.rbox(0.085, 0.2, 0.11, 0.03, upper); shaft.position.set(0, 0.17, -0.07); g.add(shaft);
+  } else {
+    const sole = Prim.rbox(0.088, 0.02, 0.265, 0.008, mats.leather(0x3a2a20)); sole.position.y = 0.01; g.add(sole);
+    const body = Prim.rbox(0.082, kind === 'flat' ? 0.045 : 0.06, 0.24, 0.025, upper); body.position.set(0, kind === 'flat' ? 0.04 : 0.05, 0); g.add(body);
+    if (kind === 'loafer') { const strap = Prim.box(0.084, 0.012, 0.03, mats.leather(new THREE.Color(color).multiplyScalar(0.7).getHex())); strap.position.set(0, 0.078, 0.03); g.add(strap); }
+  }
+  return g;
+}
+
+/** Pair of shoes side by side (toes +z), centred. */
+export function shoePair(ctx: Ctx, color: number, kind: ShoeKind, gap = 0.11): THREE.Group {
+  const g = new THREE.Group();
+  for (const s of [-1, 1]) { const sh = shoe(ctx, color, kind); sh.position.x = s * gap / 2; sh.rotation.y = -s * 0.05; g.add(sh); }
+  return g;
+}
+
+/** Lidded storage box (fabric-covered card), bottom at y=0, front +z. */
+export function storageBox(ctx: Ctx, w: number, h: number, d: number, color: number, opts: { label?: string; lidColor?: number } = {}): THREE.Group {
+  const mats = ctx.mats;
+  const g = new THREE.Group();
+  const body = Prim.rbox(w, h - 0.03, d, 0.008, mats.solid(color, { roughness: 0.85 })); body.position.y = (h - 0.03) / 2; g.add(body);
+  const lid = Prim.rbox(w + 0.016, 0.035, d + 0.016, 0.006, mats.solid(opts.lidColor ?? new THREE.Color(color).multiplyScalar(0.8).getHex(), { roughness: 0.85 })); lid.position.y = h - 0.0175; g.add(lid);
+  if (opts.label) {
+    const tex = ctx.tex.label(opts.label, { bg: '#f7f4ec', fg: '#333', w: 256, h: 96, font: 'bold 50px sans-serif' });
+    const lq = labelQuad(ctx, tex, Math.min(0.16, w * 0.55), Math.min(0.06, h * 0.3)); lq.position.set(0, h * 0.5, d / 2 + 0.002); g.add(lq);
+  }
+  return g;
+}
+
+/** Upholstered bench on tapered walnut legs, long axis along local x. Seat top at 0.5. */
+export function upholsteredBench(ctx: Ctx, x: number, z: number, rotY: number, len: number, color: number, opts: { throwColor?: number } = {}) {
+  const mats = ctx.mats;
+  const g = new THREE.Group();
+  const wood = mats.walnut;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const leg = Prim.cylinder(0.018, 0.026, 0.4, wood, { segments: 10 });
+    leg.position.set(sx * (len / 2 - 0.08), 0.2, sz * 0.15); leg.rotation.z = sx * 0.05; leg.rotation.x = -sz * 0.05;
+    g.add(leg);
+  }
+  const frame = Prim.box(len - 0.08, 0.04, 0.36, wood); frame.position.y = 0.4; g.add(frame);
+  const seat = Prim.rbox(len, 0.09, 0.42, 0.035, mats.fabric(color), { segments: 3 }); seat.position.y = 0.465; g.add(seat);
+  // welt seam around the cushion
+  const welt = Prim.box(len + 0.004, 0.006, 0.424, mats.fabric(new THREE.Color(color).multiplyScalar(0.8).getHex()), { cast: false }); welt.position.y = 0.44; g.add(welt);
+  if (opts.throwColor !== undefined) {
+    const tm = mats.fabric(opts.throwColor);
+    const fold = Prim.rbox(0.42, 0.04, 0.4, 0.015, tm); fold.position.set(len / 2 - 0.25, 0.53, 0); fold.rotation.y = 0.05; g.add(fold);
+    const drape = Prim.rbox(0.42, 0.34, 0.025, 0.012, tm); drape.position.set(len / 2 - 0.25, 0.35, 0.215); drape.rotation.y = 0.05; g.add(drape);
+  }
+  placeStatic(ctx, g, x, z, rotY, [{ size: [len, 0.52, 0.42], center: [0, 0.26, 0] }], 'fabric');
+}
+
 export type BottleKind = 'pump' | 'squeeze' | 'jar' | 'spray' | 'tube';
 
 /** Toiletry bottle; origin at the bottom centre. Returns the group and its collider extents. */

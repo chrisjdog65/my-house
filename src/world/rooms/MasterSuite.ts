@@ -1,15 +1,16 @@
 /**
- * MasterSuite — room builder (STUB: to be furnished).
+ * Master suite (upper floor, west/front): the master bedroom, its en-suite bathroom and the
+ * walk-in closet. Each room lives in its own file; shared helpers are in MasterSuite.shared.ts.
  */
 import type { Ctx } from '../Context';
 import type { Structure } from '../Structure';
-import { roomById, LEVELS } from '../Plan';
-import { ceilingDome } from '../Props';
+import { buildMasterBedroom } from './MasterSuite.bedroom';
+import { buildMasterBath } from './MasterSuite.bath';
+import { buildWalkInCloset } from './MasterSuite.closet';
 
 export function buildMasterSuite(ctx: Ctx, structure: Structure) {
   void structure;
-  const room = roomById('master');
-  const lvl = LEVELS[room.floor];
-  // placeholder light so the room is visible before furnishing
-  ceilingDome(ctx, (room.x0 + room.x1) / 2, lvl.y + lvl.ceiling, (room.z0 + room.z1) / 2, room.id);
+  buildMasterBedroom(ctx);
+  buildMasterBath(ctx);
+  buildWalkInCloset(ctx);
 }
