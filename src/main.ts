@@ -14,6 +14,7 @@ import { StaticBatch, seeded } from './world/Builder';
 import { InteractableRegistry } from './world/Interactables';
 import type { Ctx } from './world/Context';
 import { buildWorld } from './world/House';
+import { freezeStaticParts } from './world/Freeze';
 import { SPAWN, roomAt, floorAt } from './world/Plan';
 import { PlayerController } from './player/Controller';
 import { ThirdPersonCamera } from './player/Camera';
@@ -85,6 +86,11 @@ async function main() {
   };
 
   const world = await buildWorld(ctx, (p, label) => ui.setProgress(0.55 + p * 0.35, label));
+  if (!params.has('nofreeze')) {
+    ui.setProgress(0.9, 'Optimizing…');
+    const fr = freezeStaticParts(ctx, updaters);
+    console.info(`[freeze] baked ${fr.frozen} static parts into the batch; ${fr.kept} dynamic meshes kept (${fr.animated} animate)`);
+  }
 
   ui.setProgress(0.92, 'Waking up the resident…');
   const spawn = new THREE.Vector3(SPAWN.x, SPAWN.y, SPAWN.z);

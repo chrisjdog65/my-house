@@ -249,7 +249,7 @@ export function buildYard(ctx: Ctx, structure: Structure) {
   // ---------------------------------------------------------------------------------------------
   // Trees, treeline, hedges, flowers
   // ---------------------------------------------------------------------------------------------
-  const leafMat = mats.image(ctx.tex.foliage('leaf'), { transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85, envMapIntensity: 0.35 });
+  const leafMat = mats.image(ctx.tex.foliage('bush'), { transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85, envMapIntensity: 0.35 });
   const leafInner = mats.solid(0x2f5a2c, { roughness: 0.9, flatShading: true, envMapIntensity: 0.2 });
   const deciduous = (x: number, z: number, scale = 1) => {
     const g = new THREE.Group();
@@ -265,16 +265,18 @@ export function buildYard(ctx: Ctx, structure: Structure) {
       br.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9);
       g.add(br);
     }
-    for (let i = 0; i < 3; i++) {
-      const s = Prim.sphere((1.0 + rnd() * 0.5) * scale, leafInner, { segments: 10 });
-      s.position.set((rnd() - 0.5) * 1.6 * scale, cy + (rnd() - 0.5) * 1.2 * scale, (rnd() - 0.5) * 1.6 * scale);
+    // a solid core of overlapping blobs so the canopy has volume, with leaf cards for the fringe
+    for (let i = 0; i < 5; i++) {
+      const s = Prim.sphere((1.15 + rnd() * 0.55) * scale, leafInner, { segments: 10 });
+      s.position.set((rnd() - 0.5) * 1.8 * scale, cy + (rnd() - 0.5) * 1.3 * scale, (rnd() - 0.5) * 1.8 * scale);
+      s.scale.y = 0.85;
       g.add(s);
     }
-    for (let i = 0; i < 11; i++) {
-      const card = Prim.quad(3.2 * scale, 3.0 * scale, leafMat, { keepUV: true });
-      const a = rnd() * Math.PI * 2, r = (0.6 + rnd() * 1.3) * scale;
-      card.position.set(Math.cos(a) * r, cy + (rnd() - 0.5) * 2.2 * scale, Math.sin(a) * r);
-      card.rotation.set((rnd() - 0.5) * 1.2, rnd() * Math.PI, (rnd() - 0.5) * 0.6);
+    for (let i = 0; i < 16; i++) {
+      const card = Prim.quad(2.3 * scale, 2.1 * scale, leafMat, { keepUV: true });
+      const a = rnd() * Math.PI * 2, r = (1.0 + rnd() * 1.1) * scale;
+      card.position.set(Math.cos(a) * r, cy + (rnd() - 0.5) * 2.0 * scale, Math.sin(a) * r);
+      card.rotation.set((rnd() - 0.5) * 1.0, rnd() * Math.PI, (rnd() - 0.5) * 0.5);
       g.add(card);
     }
     g.position.set(x, G, z);
@@ -307,20 +309,28 @@ export function buildYard(ctx: Ctx, structure: Structure) {
   conifer(16.2, -6, 1.1);
   conifer(-6.5, 13.5, 0.85);
   conifer(6.5, -14.5, 1.0);
-  // treeline outside the fence (dark billboards) to hide the horizon
+  // treeline outside the fence: simple solid silhouettes (blob canopies on trunks) to close the horizon
   {
-    const dark = mats.image(ctx.tex.foliage('bush'), { color: 0x1f3a22, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 1, envMapIntensity: 0.1 });
+    const darkA = mats.solid(0x22402a, { roughness: 1, flatShading: true, envMapIntensity: 0.1 });
+    const darkB = mats.solid(0x2b4d30, { roughness: 1, flatShading: true, envMapIntensity: 0.1 });
     const line = new THREE.Group();
-    const put = (x: number, z: number, rotY: number) => {
-      const h = 7 + rnd() * 4;
-      const q = Prim.quad(h * 0.9, h, dark, { keepUV: true, cast: false });
-      q.position.set(x, G + h / 2 - 0.3, z);
-      q.rotation.y = rotY;
-      line.add(q);
+    const put = (x: number, z: number) => {
+      const h = 6 + rnd() * 5;
+      const trunk = Prim.cylinder(0.25, 0.4, h * 0.45, mats.bark, { segments: 6, cast: false });
+      trunk.position.set(x, G + h * 0.225, z);
+      line.add(trunk);
+      const mat = rnd() < 0.5 ? darkA : darkB;
+      for (let i = 0; i < 3; i++) {
+        const r = h * (0.22 + rnd() * 0.12);
+        const s = Prim.sphere(r, mat, { segments: 8, cast: false });
+        s.position.set(x + (rnd() - 0.5) * h * 0.3, G + h * 0.45 + r * 0.6 + i * h * 0.12, z + (rnd() - 0.5) * h * 0.3);
+        s.scale.y = 0.8;
+        line.add(s);
+      }
     };
-    for (let x = -30; x <= 30; x += 3.2) put(x + (rnd() - 0.5) * 2, LOT.z0 - 5 - rnd() * 3, 0);
-    for (let z = LOT.z0 - 4; z <= 16; z += 3.2) { put(LOT.x0 - 5 - rnd() * 3, z + (rnd() - 0.5) * 2, Math.PI / 2); put(LOT.x1 + 5 + rnd() * 3, z + (rnd() - 0.5) * 2, -Math.PI / 2); }
-    for (let x = -34; x <= 34; x += 3.5) put(x + (rnd() - 0.5) * 2, 34 + rnd() * 3, Math.PI);
+    for (let x = -34; x <= 34; x += 3.4) put(x + (rnd() - 0.5) * 2, LOT.z0 - 5 - rnd() * 4);
+    for (let z = LOT.z0 - 4; z <= 16; z += 3.4) { put(LOT.x0 - 5 - rnd() * 4, z + (rnd() - 0.5) * 2); put(LOT.x1 + 5 + rnd() * 4, z + (rnd() - 0.5) * 2); }
+    for (let x = -36; x <= 36; x += 3.6) put(x + (rnd() - 0.5) * 2, 34 + rnd() * 4);
     addStatic(ctx, line, []);
   }
   // foundation hedges (front, either side of the porch)
