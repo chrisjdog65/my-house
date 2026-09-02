@@ -94,7 +94,7 @@ export function buildNook(ctx: Ctx) {
   romanShade(ctx, 7.85, fy, 1.5, -Math.PI / 2, 1.6, fy + 2.3, 0xb7a58f);
 
   // --- pedestal table ---
-  const TX = 6.3, TZ = 1.47, TR = 0.55;
+  const TX = 5.9, TZ = 1.47, TR = 0.55; // TX keeps a 0.93 m walkway between the table and the window seat
   const table = new THREE.Group();
   place(table, TX, fy, TZ, 0);
   const pedMat = m.solid(0x2f3134, { roughness: 0.45, metalness: 0.2, envMapIntensity: 0.7 });
@@ -151,7 +151,7 @@ export function buildNook(ctx: Ctx) {
   addStatic(ctx, shakers, []);
 
   // --- decor ---
-  rug(ctx, 6.05, fy, TZ, 2.0, 1.5, 'green');
+  rug(ctx, 5.65, fy, TZ, 2.0, 1.5, 'green');
   pendant(ctx, TX, ceil, TZ, 0.95, 'nook', { shadeColor: 0xe9e4d8, shadeR: 0.2, intensity: 11, distance: 6.5 });
   lightSwitch(ctx, 3.561, fy + 1.2, 0.74, Math.PI / 2, 'nook', 'nook light');
   pictureFrame(ctx, 5.0, fy + 1.55, 2.44 - 0.001, Math.PI, 0.5, 0.4, ctx.tex.art(5, 1.25), { frameColor: 0x3a2a1c });

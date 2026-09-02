@@ -497,7 +497,7 @@ export function buildSink(ctx: Ctx, run: THREE.Group, dyn: THREE.Group, cut: { x
 
   // faucet (dynamic: it is the toggle target)
   const chrome = m.chrome;
-  const fz = cut.z0 - 0.05;
+  const fz = cut.z0 - 0.055;
   const colH = 0.24, R = 0.12;
   const fg = new THREE.Group();
   const flange = Prim.cylinder(0.026, 0.03, 0.02, chrome, { segments: 20 });

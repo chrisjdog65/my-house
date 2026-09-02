@@ -49,7 +49,8 @@ export function buildKitchen(ctx: Ctx, structure: Structure) {
   const back = new THREE.Group();
   place(back, BX, fy, BZ, 0);
   const backDyn = dynGroup(BX, fy, BZ, 0);
-  const sinkCut = { x0: 2.45, x1: 3.25, z0: 0.12, z1: 0.55 };
+  // the cutout starts clear of the window sill (which reaches 0.10 into the run) so the faucet fits in front of it
+  const sinkCut = { x0: 2.45, x1: 3.25, z0: 0.2, z1: 0.55 };
   const basinCut = { x0: sinkCut.x0 - 0.012, x1: sinkCut.x1 + 0.012, z0: sinkCut.z0 - 0.012, z1: sinkCut.z1 + 0.012 };
   const backUnits: Unit[] = [
     { w: 0.8, front: { kind: 'drawers', n: 3 } },

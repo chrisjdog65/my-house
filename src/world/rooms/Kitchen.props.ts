@@ -583,24 +583,26 @@ export function interiorPlumbing(ctx: Ctx) {
     const m = ctx.mats;
     const chrome = m.chrome;
     const cx = (b.x0 + b.x1) / 2 + 0.1, cz = (b.z0 + b.z1) / 2 - 0.05;
+    // the undermount basin hangs 0.2 into the carcass: hang the trap below its floor, not below the top
+    const yT = b.y1 - 0.2;
     const down = Prim.cylinder(0.02, 0.02, 0.16, chrome, { segments: 12 });
-    down.position.set(cx, b.y1 - 0.08, cz);
+    down.position.set(cx, yT - 0.08, cz);
     g.add(down);
     const trap = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.02, 10, 18, Math.PI), chrome);
     trap.rotation.z = Math.PI;
     trap.rotation.y = Math.PI / 2;
-    trap.position.set(cx, b.y1 - 0.16, cz - 0.05);
+    trap.position.set(cx, yT - 0.16, cz - 0.05);
     g.add(trap);
     const up = Prim.cylinder(0.02, 0.02, 0.1, chrome, { segments: 12 });
-    up.position.set(cx, b.y1 - 0.13, cz - 0.1);
+    up.position.set(cx, yT - 0.13, cz - 0.1);
     g.add(up);
     const back = Prim.cylinder(0.02, 0.02, cz - 0.1 - b.z0 + 0.02, chrome, { segments: 12 });
     back.rotation.x = Math.PI / 2;
-    back.position.set(cx, b.y1 - 0.09, (cz - 0.1 + b.z0) / 2);
+    back.position.set(cx, yT - 0.09, (cz - 0.1 + b.z0) / 2);
     g.add(back);
     for (const s of [-1, 1]) {
       const supply = Prim.cylinder(0.006, 0.006, 0.3, chrome, { segments: 8 });
-      supply.position.set(cx - 0.08 + s * 0.03, b.y1 - 0.2, b.z0 + 0.05);
+      supply.position.set(cx - 0.08 + s * 0.03, yT - 0.2, b.z0 + 0.05);
       g.add(supply);
     }
     // cleaning things
