@@ -421,10 +421,15 @@ export class TextureLibrary {
   bookRow(seed: number): THREE.Texture {
     return this.canvas(`books-${seed}`, 1024, 256, (ctx, w, h) => {
       const rnd = mulberry32(seed);
+      // Muted cloth/leather binding colours — saturated primaries read as toys, not a library.
+      const HUES = [8, 18, 28, 34, 45, 92, 150, 190, 210, 225, 260, 340];
       let x = 0;
       while (x < w) {
         const bw = 28 + rnd() * 50;
-        const hue = rnd() * 360, sat = 30 + rnd() * 50, lig = 25 + rnd() * 40;
+        const hue = HUES[Math.floor(rnd() * HUES.length)] + (rnd() - 0.5) * 10;
+        const cream = rnd() < 0.14;
+        const sat = cream ? 12 + rnd() * 10 : 16 + rnd() * 26;
+        const lig = cream ? 62 + rnd() * 14 : 20 + rnd() * 24;
         ctx.fillStyle = `hsl(${hue}, ${sat}%, ${lig}%)`;
         const bh = h * (0.7 + rnd() * 0.3);
         ctx.fillRect(x, h - bh, bw, bh);
