@@ -182,7 +182,9 @@ export class MaterialLibrary {
   get espresso() { return this.tex('espresso', { normalScale: 0.5, envMapIntensity: 0.6 }); }
   get beadboard() { return this.tex('beadboard', { normalScale: 0.8, envMapIntensity: 0.5 }); }
   wall(color: THREE.ColorRepresentation = 0xf3efe6) { return this.tex('plaster', { color, normalScale: 0.35, envMapIntensity: 0.35 }); }
-  get ceiling() { return this.tex('ceiling', { color: 0xfafaf7, normalScale: 0.4, envMapIntensity: 0.3 }); }
+  // Very low env influence: the environment map is unoccluded sky, so a ceiling that samples it
+  // reads blue in rooms with little artificial light (most obviously in the basement).
+  get ceiling() { return this.tex('ceiling', { color: 0xfafaf7, normalScale: 0.4, envMapIntensity: 0.06 }); }
   get brick() { return this.tex('brick', { normalScale: 1.0, envMapIntensity: 0.4 }); }
   get brickPale() { return this.tex('brickPale', { normalScale: 1.0, envMapIntensity: 0.4 }); }
   get stone() { return this.tex('stone', { normalScale: 1.0, envMapIntensity: 0.4 }); }

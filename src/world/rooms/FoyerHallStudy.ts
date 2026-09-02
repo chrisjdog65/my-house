@@ -86,7 +86,8 @@ function buildFoyer(ctx: Ctx) {
   const hookX = (i: number) => railX - (-railLen / 2 + 0.08 + (i / 3) * (railLen - 0.16)); // rotY = PI flips local x: -0.73, -0.90, -1.06, -1.23
   const hookZ = frontZ - 0.002 - 0.08; // hook tips
   const hat = P.fedora(ctx, 0x4a3f36);
-  place(hat, hookX(0), y0 + 1.66, frontZ - 0.03);
+  // the 0.30 m brim is wider than the 0.17 m hook pitch, so the hat hangs proud of the wall to clear coatA
+  place(hat, hookX(0), y0 + 1.66, hookZ - 0.11);
   hat.rotation.set(-Math.PI / 2, 0, 0.12);
   P.stat(ctx, hat);
   const coatA = P.coat(ctx, 0x2b3a55, { scarf: 0x9b2f2f });
@@ -280,7 +281,8 @@ function buildStudy(ctx: Ctx) {
   place(desk, deskX, y0, deskZ, -Math.PI / 2);
   addStatic(ctx, desk, [{ size: [dW, dH, dD], center: [0, dH / 2, 0] }]);
   const deskTop = y0 + dH;
-  P.monitor(ctx, 6.12, deskTop, deskZ + 0.1, Math.PI / 2, 'study');
+  // no light group: the screen glow follows the monitor's own toggle, not the room switch
+  P.monitor(ctx, 6.12, deskTop, deskZ + 0.1, Math.PI / 2);
   const kb = P.keyboard(ctx); place(kb, 6.31, deskTop, deskZ + 0.1, Math.PI / 2); P.stat(ctx, kb);
   const ms = P.mouse(ctx); place(ms, 6.32, deskTop, deskZ - 0.23, Math.PI / 2 + 0.2); P.stat(ctx, ms);
   mug(ctx, 6.3, deskTop, deskZ + 0.47, 0x2f4a3a);

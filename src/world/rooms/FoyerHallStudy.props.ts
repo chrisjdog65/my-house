@@ -199,7 +199,8 @@ export function bookRowMesh(ctx: Ctx, width: number, height: number, seed: numbe
     else uv.setXY(i, 0.5, 0.05);
   }
   uv.needsUpdate = true;
-  m.position.y = height / 2;
+  // bake the lift into the geometry so a caller's position.set() can't sink the row through the shelf
+  m.geometry.translate(0, height / 2, 0);
   return m;
 }
 
