@@ -430,8 +430,8 @@ export function buildYard(ctx: Ctx, structure: Structure) {
       const pad = Prim.rbox(0.56, 0.08, 1.1, 0.03, mats.fabric(0x5a7d9a)); pad.position.set(0, 0.42, 0.25); l.add(pad);
       const backPad = Prim.rbox(0.56, 0.08, 0.7, 0.03, mats.fabric(0x5a7d9a)); backPad.position.set(0, 0.62, -0.55); backPad.rotation.x = 0.65; l.add(backPad);
       for (const [lx, lz] of [[-0.25, -0.7], [0.25, -0.7], [-0.25, 0.7], [0.25, 0.7]]) { const leg = Prim.cylinder(0.015, 0.015, 0.33, mats.darkMetal, { segments: 6 }); leg.position.set(lx, 0.17, lz); l.add(leg); }
-      l.position.set(PATIO.x1 - 0.55, G, PATIO.z0 + 1.1 + i * 1.0);
-      l.rotation.y = Math.PI / 2;
+      l.position.set(px, G, pz);
+      l.rotation.y = Math.PI; // head end toward the house, feet out into the yard
       addStatic(ctx, l, [{ size: [0.65, 0.8, 1.7], center: [0, 0.4, 0] }]);
     }
   }
@@ -477,8 +477,8 @@ export function buildYard(ctx: Ctx, structure: Structure) {
   }
   // fire pit
   {
-    // west of the back-door steps (which occupy x 6.3..7.7, z -8.2..-7.1)
-    const fx = 4.6, fz = PATIO.z0 + 1.3;
+    // on the open lawn south of the patio — on the paving it collided with the table, chairs and grill
+    const fx = 6.0, fz = PATIO.z0 - 2.0;
     const ring = new THREE.Group();
     const stoneMat = mats.stone;
     for (let i = 0; i < 14; i++) {
@@ -716,8 +716,9 @@ export function buildYard(ctx: Ctx, structure: Structure) {
     // hose reel on the west wall
     const hr = new THREE.Group();
     const bracket = Prim.box(0.06, 0.4, 0.3, mats.darkMetal); hr.add(bracket);
-    const reel = Prim.cylinder(0.22, 0.22, 0.2, mats.solid(0x2e7d3a, { roughness: 0.6 }), { segments: 16 }); reel.rotation.z = Math.PI / 2; reel.position.x = 0.17; hr.add(reel);
-    const hose = Prim.torus(0.2, 0.03, mats.solid(0x2e7d3a, { roughness: 0.7 })); hose.rotation.z = Math.PI / 2; hose.position.x = 0.17; hr.add(hose);
+    // reel hangs outward (-x): the wall's outside face is x -8.15 and the bracket sits at -8.2
+    const reel = Prim.cylinder(0.22, 0.22, 0.2, mats.solid(0x2e7d3a, { roughness: 0.6 }), { segments: 16 }); reel.rotation.z = Math.PI / 2; reel.position.x = -0.13; hr.add(reel);
+    const hose = Prim.torus(0.2, 0.03, mats.solid(0x2e7d3a, { roughness: 0.7 })); hose.rotation.z = Math.PI / 2; hose.position.x = -0.13; hr.add(hose);
     hr.position.set(HOUSE.x0 - 0.2, G + 0.9, -1.0);
     addStatic(ctx, hr, []);
 

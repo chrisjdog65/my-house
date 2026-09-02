@@ -242,13 +242,16 @@ export const STAIRS: StairDef[] = [
 export const FLOOR_HOLES: Record<FloorId, [number, number, number, number][]> = {
   basement: [],
   ground: [[-1.5, -5.85, -0.1, -1.4]], // hole in the ground slab for the basement stairs
-  upper: [[0.05, -5.85, 1.5, -2.2]], // hole in the upper slab for the stairs up (headroom > 2 m)
+  // The opening spans the WHOLE flight (down to its bottom riser at z=-1.4); stopping it short
+  // leaves the slab overhanging the lower treads, where a climbing player hits it head-first.
+  upper: [[0.05, -5.85, 1.5, -1.4]],
 };
 
 /** Railing runs along the upper-floor stair opening [x0,z0,x1,z1] */
 export const RAILINGS: { floor: FloorId; x0: number; z0: number; x1: number; z1: number }[] = [
-  { floor: 'upper', x0: 0.05, z0: -4.7, x1: 0.05, z1: -2.2 },
-  { floor: 'upper', x0: 0.05, z0: -2.2, x1: 1.44, z1: -2.2 },
+  // west side, leaving z -5.85..-4.7 open where you step off the top tread into the hall
+  { floor: 'upper', x0: 0.05, z0: -4.7, x1: 0.05, z1: -1.4 },
+  { floor: 'upper', x0: 0.05, z0: -1.4, x1: 1.44, z1: -1.4 },
 ];
 
 export const PORCH = { x0: -2.6, x1: 2.6, z0: 6, z1: 8.4, y: 0, roofY: 3.0 };
