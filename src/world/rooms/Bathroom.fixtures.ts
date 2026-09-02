@@ -341,8 +341,8 @@ export function buildToilet(ctx: Ctx, x: number, z: number, rotY: number) {
     const h = Prim.rbox(0.03, 0.02, 0.04, 0.005, m.chrome, { segments: 1 }); h.position.set(sx * 0.09, 0.445, -0.01); g.add(h);
   }
   // supply valve + line to the wall
-  const valve = Prim.cylinder(0.014, 0.014, 0.03, m.chrome, { segments: 10 }); valve.rotation.x = Math.PI / 2; valve.position.set(0.16, 0.2, -0.24); g.add(valve);
-  const line = Prim.cylinder(0.005, 0.005, 0.26, m.chrome, { segments: 8 }); line.position.set(0.16, 0.33, -0.22); g.add(line);
+  const valve = Prim.cylinder(0.014, 0.014, 0.03, m.chrome, { segments: 10 }); valve.rotation.x = Math.PI / 2; valve.position.set(0.16, 0.2, -0.225); g.add(valve);
+  const line = Prim.cylinder(0.005, 0.005, 0.26, m.chrome, { segments: 8 }); line.position.set(0.16, 0.33, -0.215); g.add(line);
   // tank-top clutter: tissues + a candle jar
   const tissues = Prim.rbox(0.12, 0.08, 0.12, 0.006, m.solid(0xd8c8b0, { roughness: 0.9 }), { segments: 1 }); tissues.position.set(0.1, 0.87, -0.13); tissues.rotation.y = 0.2; g.add(tissues);
   const tissue = Prim.box(0.05, 0.03, 0.002, m.solid(0xfafaf8, { roughness: 0.95 })); tissue.position.set(0.1, 0.92, -0.13); tissue.rotation.set(0.3, 0.2, 0.2); g.add(tissue);
