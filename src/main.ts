@@ -99,7 +99,11 @@ async function main() {
   ui.setProgress(0.92, 'Waking up the resident…');
   const spawn = new THREE.Vector3(SPAWN.x, SPAWN.y, SPAWN.z);
   const player = new PlayerController(physics, input, audio, spawn, SPAWN.yaw);
-  await player.character.load(`${import.meta.env.BASE_URL}models/Soldier.glb`.replace('//', '/'));
+  // The single-file build has no sibling files to fetch, so it embeds the model as a data URI and
+  // announces it here (see tools/singlefile.mjs).
+  const modelUrl = (window as unknown as { __MODEL_URL?: string }).__MODEL_URL
+    ?? `${import.meta.env.BASE_URL}models/Soldier.glb`.replace('//', '/');
+  await player.character.load(modelUrl);
   engine.scene.add(player.character.root);
   const camera = new ThirdPersonCamera(engine.camera, physics, input, player);
   const carry = new CarrySystem(physics, audio);

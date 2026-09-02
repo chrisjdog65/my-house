@@ -5,6 +5,10 @@
 import * as THREE from 'three';
 import { TEXTURE_SPECS, generateTexture, type GeneratedTexture } from './painters';
 import { mulberry32 } from './Noise';
+// Inlined rather than emitted as a separate chunk so a single-file build stays a single file. Vite
+// wraps it in a blob URL; where blob workers are refused (file://, strict CSP) the constructor
+// throws or the worker errors, and generation falls back to the main thread.
+import TexWorker from './texWorker.ts?worker&inline';
 
 /** Bump when painters change so stale cached textures are regenerated. */
 export const TEXTURE_CACHE_VERSION = 'v1';
@@ -72,6 +76,8 @@ export class TextureLibrary {
   private pending = new Map<number, { resolve: (t: GeneratedTexture) => void; reject: (e: any) => void }>();
   private queue: { name: string; size: number; resolve: (t: GeneratedTexture) => void; reject: (e: any) => void }[] = [];
   private busy = new Set<Worker>();
+  /** the job each busy worker is running, so it can be re-queued if that worker dies */
+  private jobOf = new Map<Worker, { name: string; size: number; id: number }>();
   maxAnisotropy = 8;
   /** resolution multiplier (1 = full) */
   scale = 1;
@@ -81,9 +87,9 @@ export class TextureLibrary {
     const n = Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 1));
     try {
       for (let i = 0; i < n; i++) {
-        const w = new Worker(new URL('./texWorker.ts', import.meta.url), { type: 'module' });
+        const w = new TexWorker();
         w.onmessage = (e) => this.onWorkerMessage(w, e);
-        w.onerror = () => { /* fall back to main thread */ };
+        w.onerror = () => this.retireWorker(w);
         this.workers.push(w);
       }
     } catch {
@@ -91,11 +97,33 @@ export class TextureLibrary {
     }
   }
 
+  /**
+   * Drop a worker that failed to start or died, and re-queue whatever it was running. Workers are
+   * not always available -- a page opened over file:// cannot spawn one from a blob URL, and a
+   * strict CSP can block them too -- so generation has to survive losing the whole pool and fall
+   * back to the main thread rather than leaving jobs pending forever.
+   */
+  private retireWorker(w: Worker) {
+    const i = this.workers.indexOf(w);
+    if (i >= 0) this.workers.splice(i, 1);
+    const job = this.jobOf.get(w);
+    this.jobOf.delete(w);
+    this.busy.delete(w);
+    if (job) {
+      const p = this.pending.get(job.id);
+      this.pending.delete(job.id);
+      if (p) this.queue.unshift({ name: job.name, size: job.size, resolve: p.resolve, reject: p.reject });
+    }
+    try { w.terminate(); } catch { /* already gone */ }
+    this.pump();
+  }
+
   private onWorkerMessage(w: Worker, e: MessageEvent) {
     const { id, ok, tex, error } = e.data;
     const p = this.pending.get(id);
     this.pending.delete(id);
     this.busy.delete(w);
+    this.jobOf.delete(w);
     if (p) ok ? p.resolve(tex) : p.reject(new Error(error));
     this.pump();
   }
@@ -103,11 +131,18 @@ export class TextureLibrary {
   private pump() {
     while (this.queue.length) {
       const free = this.workers.find((w) => !this.busy.has(w));
-      if (!free) return;
+      if (!free) {
+        // No pool left (never started, or every worker died): finish the rest on the main thread.
+        if (this.workers.length) return;
+        const job = this.queue.shift()!;
+        setTimeout(() => job.resolve(generateTexture(job.name, job.size)), 0);
+        continue;
+      }
       const job = this.queue.shift()!;
       const id = this.nextId++;
       this.pending.set(id, { resolve: job.resolve, reject: job.reject });
       this.busy.add(free);
+      this.jobOf.set(free, { name: job.name, size: job.size, id });
       free.postMessage({ id, name: job.name, size: job.size });
     }
   }

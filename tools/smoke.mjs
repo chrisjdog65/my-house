@@ -3,7 +3,9 @@
  * Gameplay smoke test: loads the game headlessly, walks forward, opens the front door, picks up
  * an object if one is nearby, and reports what happened. Exit code 1 on failure.
  *
- *   node tools/smoke.mjs [--url http://127.0.0.1:5173]
+ * Usage:
+ *   node tools/smoke.mjs [--url http://127.0.0.1:5173] [--timeout 240000]
+ *   node tools/smoke.mjs --url file:///abs/path/my-house.html --timeout 900000
  */
 const pw = await import('playwright').catch(() => import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 const { chromium } = pw;
@@ -11,12 +13,20 @@ import { acquireCaptureLock } from './lock.mjs';
 const args = process.argv.slice(2);
 const get = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
 const URL_BASE = get('--url', 'http://127.0.0.1:5173');
+// A --url naming a page (the single-file build, opened over file://) takes the query directly;
+// anything else is an origin and needs the trailing slash.
+const PAGE_URL = URL_BASE.endsWith('.html') ? URL_BASE : URL_BASE + '/';
 const releaseLock = await acquireCaptureLock('smoke');
 
 const browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const context = await browser.newContext({ viewport: { width: 800, height: 450 } });
 const page = await context.newPage();
-await page.route('**/*', (r) => (r.request().url().startsWith(URL_BASE) && !r.request().url().includes('/@vite/client')) ? r.continue() : r.abort());
+await page.route('**/*', (r) => {
+  const u = r.request().url();
+  // blob:/data: are the inlined worker and the embedded character model in the single-file build.
+  const ours = u.startsWith(URL_BASE) || u.startsWith('blob:') || u.startsWith('data:');
+  return ours && !u.includes('/@vite/client') ? r.continue() : r.abort();
+});
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 const results = [];
@@ -36,8 +46,9 @@ async function hold(key, simSeconds) {
 const check = (name, ok, detail = '') => { results.push({ name, ok, detail }); console.log(`${ok ? '✔' : '✘'} ${name}${detail ? ' — ' + detail : ''}`); };
 
 try {
-  await page.goto(`${URL_BASE}/?auto=1&nolock=1&q=low&x=0&y=0&z=4.6&yaw=3.1416&cyaw=3.1416&cpitch=0.2&dist=3`, { waitUntil: 'domcontentloaded' });
-  const deadline = Date.now() + 240000;
+  await page.goto(`${PAGE_URL}?auto=1&nolock=1&q=low&x=0&y=0&z=4.6&yaw=3.1416&cyaw=3.1416&cpitch=0.2&dist=3`, { waitUntil: 'domcontentloaded' });
+  // Generous: the single-file build may have to paint every texture on the main thread.
+  const deadline = Date.now() + parseInt(get('--timeout', '240000'));
   while (Date.now() < deadline && !(await page.evaluate(() => window.__ready === true))) await page.waitForTimeout(1000);
   check('scene ready', await page.evaluate(() => window.__ready === true));
 
