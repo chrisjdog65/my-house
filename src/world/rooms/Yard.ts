@@ -69,8 +69,10 @@ export function buildYard(ctx: Ctx, structure: Structure) {
     ctx.batch.add(landing, { worldUV: true });
     collider(ctx, dx, G + 0.45, zTop - landD / 2, landW, 0.9, landD);
     const steps = 3, rise = 0.9 / steps, tread = 0.34;
-    for (let i = 0; i < steps; i++) {
-      const h = 0.9 - (i + 1) * rise + rise;
+    // tread tops sit one riser below the landing each, so the ramp below passes through the
+    // nosings (house convention); the last tread is the patio itself, so it needs no block
+    for (let i = 0; i < steps - 1; i++) {
+      const h = 0.9 - (i + 1) * rise;
       const s = Prim.box(landW, h, tread, mats.tex('concrete', { color: 0xc4c2bb }));
       s.position.set(dx, G + h / 2, zTop - landD - tread * i - tread / 2);
       ctx.batch.add(s, { worldUV: true });
@@ -105,6 +107,7 @@ export function buildYard(ctx: Ctx, structure: Structure) {
     [-40, 16.6, 40, 40],
     [-17.2, -16.2, -13.8, -12.4], // shed
     [-7.2, -11.6, -4.8, -8.4], // garden box
+    [4.5, -12.3, 7.3, -10.3], // fire pit + stump seats
   ];
   const clear = (x: number, z: number) => !noGrass.some(([x0, z0, x1, z1]) => x >= x0 && x <= x1 && z >= z0 && z <= z1);
   const inLot = (x: number, z: number) => x > LOT.x0 + 0.4 && x < LOT.x1 - 0.4 && z > LOT.z0 + 0.4 && z < 16.6;
@@ -356,7 +359,7 @@ export function buildYard(ctx: Ctx, structure: Structure) {
     for (const sx of [-1, 1]) {
       const x0 = sx > 0 ? WALKWAY.x1 + 0.2 : WALKWAY.x0 - 1.0;
       const bed = Prim.box(0.8, 0.06, 5.5, bedMat, { cast: false });
-      bed.position.set(x0 + 0.4, G + 0.03, walkStart + 2.9);
+      bed.position.set(x0 + 0.4, G + 0.07, walkStart + 2.9); // soil top above the border lip, or it never shows
       ctx.batch.add(bed, { worldUV: true });
       const border = Prim.box(0.8 + 0.12, 0.1, 5.5 + 0.12, mats.tex('concrete', { color: 0xa8a6a0 }));
       border.position.set(x0 + 0.4, G + 0.02, walkStart + 2.9);
@@ -402,7 +405,8 @@ export function buildYard(ctx: Ctx, structure: Structure) {
     const stem = Prim.cylinder(0.04, 0.05, 0.7, mats.darkMetal); stem.position.y = 0.36; t.add(stem);
     const base = Prim.cylinder(0.32, 0.36, 0.04, mats.darkMetal); base.position.y = 0.02; t.add(base);
     const pole = Prim.cylinder(0.025, 0.025, 2.4, mats.paintedMetal(0xe9e4d8)); pole.position.y = 1.2; t.add(pole);
-    const umb = Prim.cone(1.5, 0.5, mats.fabric(0xb8452f), { segments: 10 }); umb.position.y = 2.4; (umb.material as THREE.Material).side = THREE.DoubleSide; t.add(umb);
+    // r 1.05 still overhangs the 1.5 m table but keeps the canopy clear of the string-light run at z -9.2
+    const umb = Prim.cone(1.05, 0.5, mats.fabric(0xb8452f), { segments: 10 }); umb.position.y = 2.4; (umb.material as THREE.Material).side = THREE.DoubleSide; t.add(umb);
     const finial = Prim.sphere(0.05, mats.darkMetal); finial.position.y = 2.68; t.add(finial);
     t.position.set(patioCx, G, patioCz);
     addStatic(ctx, t, [{ size: [1.5, 0.76, 1.5], center: [0, 0.38, 0] }]);
@@ -418,8 +422,9 @@ export function buildYard(ctx: Ctx, structure: Structure) {
       c.rotation.y = -a + Math.PI / 2;
       addStatic(ctx, c, [{ size: [0.5, 0.95, 0.5], center: [0, 0.48, 0] }]);
     }
-    // lounge chairs along the east edge
-    for (let i = 0; i < 2; i++) {
+    // lounge chairs, one down each side of the patio — they are 1.7 m along their local Z, so they
+    // have to run along the patio's Z axis to stay on the paving and clear of the back-door steps
+    for (const [px, pz] of [[PATIO.x0 + 0.4, PATIO.z0 + 2.2], [PATIO.x1 - 0.4, PATIO.z0 + 1.3]]) {
       const l = new THREE.Group();
       const frame = Prim.rbox(0.62, 0.06, 1.7, 0.02, mats.paintedMetal(0xe8e4dc)); frame.position.y = 0.35; l.add(frame);
       const pad = Prim.rbox(0.56, 0.08, 1.1, 0.03, mats.fabric(0x5a7d9a)); pad.position.set(0, 0.42, 0.25); l.add(pad);

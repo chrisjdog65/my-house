@@ -503,12 +503,12 @@ export function buildWorkshop(ctx: Ctx, power: BasementPower) {
     dial.rotation.y = Math.PI;
     dial.userData.keepSeparate = true;
     rg.add(dial);
-    rg.position.set(5.35, y0 + 0.93, 5.65);
+    rg.position.set(5.35, y0 + 0.93, 5.30);
     const radio = mergeByMaterial(rg);
     let dialMesh: THREE.Mesh | null = null;
     radio.traverse((o) => { if (o instanceof THREE.Mesh && o.userData.keepSeparate) dialMesh = o; });
     ctx.dynamic.add(radio);
-    const rpos = new THREE.Vector3(5.35, y0 + 1.0, 5.65);
+    const rpos = new THREE.Vector3(5.35, y0 + 1.0, 5.30);
     const radioToggle = new Toggle(radio, { on: 'Turn off radio', off: 'Turn on radio' }, (on) => {
       if (dialMesh) dialMesh.material = on ? dialOn : dialOff;
       ctx.audio.play('click', rpos);
@@ -912,7 +912,7 @@ export function buildWorkshop(ctx: Ctx, power: BasementPower) {
       lg.add(ply);
     }
     lg.position.set(7.3, 0, 1.8);
-    lg.rotation.z = -0.2;
+    lg.rotation.z = -0.13; // any steeper and the 2.4 m plywood tops punch through the east wall (x 7.85)
     g.add(lg);
     // scrap bin beside the bench + scraps and sawdust on the floor
     const bin = Prim.cylinder(0.18, 0.16, 0.42, m.solid(0x6d7278, { roughness: 0.45, metalness: 0.6 }), { segments: 16 });

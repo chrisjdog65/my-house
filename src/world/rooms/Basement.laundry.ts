@@ -596,7 +596,7 @@ export function buildLaundry(ctx: Ctx, power: BasementPower) {
   }
 
   // ------------------------------------------------------------------ sign, lights & switch
-  pictureFrame(ctx, 7.84, y0 + 2.0, -3.4, -Math.PI / 2, 0.62, 0.26,
+  pictureFrame(ctx, 7.84, y0 + 2.2, -3.4, -Math.PI / 2, 0.62, 0.26,
     ctx.tex.label('LAUNDRY', { bg: '#2f4a5c', fg: '#f4efe4', sub: 'DROP IT · WASH IT · FOLD IT', font: 'bold 80px Impact, "Arial Black", sans-serif', w: 768, h: 320 }), { frameColor: 0xf0ede4 });
   pictureFrame(ctx, 4.5, y0 + 1.6, -1.07, Math.PI, 0.8, 0.3,
     ctx.tex.label('WASH  ·  DRY  ·  FOLD', { bg: '#f4efe4', fg: '#2f4a5c', sub: 'REPEAT', font: 'bold 64px Georgia, serif', w: 768, h: 288 }), { frameColor: 0x3a2a20 });

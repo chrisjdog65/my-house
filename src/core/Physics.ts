@@ -96,6 +96,13 @@ export class Physics {
    * The ramp surface passes through the tread nosings from (zBottom, yBottom) to (zTop, yTop).
    */
   addStairRamp(x0: number, x1: number, zBottom: number, yBottom: number, zTop: number, yTop: number, meta: any = { surface: 'oak' }): RAPIER.Collider {
+    // The slab is symmetric, but the rotation below only yields an upward face when the length
+    // axis has a positive z component; for a flight climbing toward -z, swap the endpoints so the
+    // solid stays UNDER the treads instead of on top of them.
+    if (zTop < zBottom) {
+      [zBottom, zTop] = [zTop, zBottom];
+      [yBottom, yTop] = [yTop, yBottom];
+    }
     const dz = zTop - zBottom, dy = yTop - yBottom;
     const len = Math.hypot(dz, dy);
     const thick = 0.3;

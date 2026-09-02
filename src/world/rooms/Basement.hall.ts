@@ -271,7 +271,6 @@ export function buildBasementHall(ctx: Ctx, power: BasementPower) {
     dyn.add(innerM);
     const mainT = Prim.rbox(0.09, 0.04, 0.022, 0.004, bkMat);
     mainT.position.set(0, 1.76, 0.074);
-    dyn.add(mainT);
     // hinged cover
     const door = hinged(ctx, dyn, new THREE.Vector3(-0.18, 1.5, 0.09), (pivot) => {
       const leaf = Prim.rbox(0.36, 0.66, 0.012, 0.004, bm.steelGrey);
@@ -290,6 +289,9 @@ export function buildBasementHall(ctx: Ctx, power: BasementPower) {
     const focus = new THREE.Vector3(px - 0.15, y0 + 1.5, pz);
     const group = new THREE.Group();
     group.add(innerM);
+    // the handle must live inside the interactable's tree, or the freeze pass bakes it into the
+    // static batch (it never moves during the probe) and flipping the breaker animates an orphan
+    group.add(mainT);
     dyn.add(group);
     ctx.interact.add(new MainBreaker(ctx, group, mainT, door, power, focus));
   }
