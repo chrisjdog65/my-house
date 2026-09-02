@@ -67,9 +67,24 @@ try {
   check('player walks', moved > 0.3, `moved ${moved.toFixed(2)} m from ${p0.map((n) => n.toFixed(2))} to ${p1.map((n) => n.toFixed(2))}`);
   check('player stays on floor', Math.abs(p1[1]) < 0.2, `y=${p1[1].toFixed(2)}`);
 
+  // strafe: facing -z with +y up, the player's right hand points toward +x, so D must raise x and A
+  // must lower it. These were mirrored: the movement basis used (cos, 0, -sin) for right where
+  // forward x up gives (-cos, 0, sin).
+  await page.evaluate(() => { const g = window.__game; g.teleport(0, -0.9, 10.5, Math.PI); g.camera.yaw = 0; g.camera.pitch = 0.15; });
+  await page.waitForTimeout(500);
+  const sx0 = await page.evaluate(() => window.__game.player.position.x);
+  await hold('KeyD', 1.0);
+  const sxD = await page.evaluate(() => window.__game.player.position.x);
+  check('D strafes right', sxD - sx0 > 0.3, `x ${sx0.toFixed(2)} -> ${sxD.toFixed(2)}`);
+  await hold('KeyA', 1.6);
+  const sxA = await page.evaluate(() => window.__game.player.position.x);
+  check('A strafes left', sxA - sxD < -0.3, `x ${sxD.toFixed(2)} -> ${sxA.toFixed(2)}`);
+
   // teleport in front of the front door and open it with E
   await page.evaluate(() => { const g = window.__game; g.teleport(0, 0, 4.9, 0); g.camera.yaw = Math.PI; g.camera.pitch = 0.1; });
-  await page.waitForTimeout(600);
+  // Sim time, not wall clock: interaction picking runs in the frame loop, which under software
+  // rendering can be several hundred milliseconds behind.
+  await advance(0.5);
   const prompt = await page.evaluate(() => document.getElementById('prompt').classList.contains('hidden') ? null : document.getElementById('prompt-text').textContent);
   check('door prompt shown', prompt === 'Open door', `prompt=${prompt}`);
   await page.keyboard.press('KeyE');

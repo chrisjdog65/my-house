@@ -95,6 +95,25 @@ async function main() {
     const fr = freezeStaticParts(ctx, updaters);
     console.info(`[freeze] baked ${fr.frozen} static parts into the batch; ${fr.kept} dynamic meshes kept (${fr.animated} animate)`);
   }
+  // Small props stop casting shadows. Every caster is redrawn into the sun's depth map and again
+  // into the shadowing lamp's, so a mug or a paperback costs as much per frame as the sofa while
+  // contributing a shadow a couple of pixels across. Measured: shadow passes were 85% of the draw
+  // calls in a furnished room.
+  {
+    const world3 = new THREE.Vector3();
+    let dropped = 0;
+    dynamic.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh || !m.castShadow || !m.geometry) return;
+      if (!m.geometry.boundingSphere) m.geometry.computeBoundingSphere();
+      const bs = m.geometry.boundingSphere;
+      if (!bs) return;
+      m.getWorldScale(world3);
+      const radius = bs.radius * Math.max(world3.x, world3.y, world3.z);
+      if (radius < 0.16) { m.castShadow = false; dropped++; }
+    });
+    console.info(`[shadows] ${dropped} small props no longer cast`);
+  }
 
   ui.setProgress(0.92, 'Waking up the resident…');
   const spawn = new THREE.Vector3(SPAWN.x, SPAWN.y, SPAWN.z);

@@ -112,7 +112,9 @@ export class PlayerController {
       const sin = Math.sin(this.cameraYaw), cos = Math.cos(this.cameraYaw);
       // camera forward (on ground) = (sin(yaw), 0, cos(yaw))
       const fwd = new THREE.Vector3(sin, 0, cos);
-      const right = new THREE.Vector3(cos, 0, -sin);
+      // right = forward x up. Facing +z with +y up, that is -x; the mirrored form put A and D the
+      // wrong way round.
+      const right = new THREE.Vector3(-cos, 0, sin);
       desired.addScaledVector(fwd, my).addScaledVector(right, mx);
       desired.normalize().multiplyScalar(targetSpeed * Math.min(1, len));
     }

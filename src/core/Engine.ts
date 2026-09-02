@@ -58,14 +58,23 @@ export class Engine {
     this.resize();
   }
 
-  /** dynamic resolution multiplier (0.6..1) applied on top of the user's render scale to hold a smooth frame rate */
+  /**
+   * Dynamic resolution multiplier applied on top of the user's render scale to hold a smooth frame
+   * rate. The floor is deliberately shallow: dropping to 0.6 bought frames by making the whole
+   * picture soft, which is the "foggy" look this is meant to avoid. Frames come from rendering less
+   * work, not from resolving it more coarsely.
+   */
   private dynamicScale = 1;
   private slowFrames = 0;
   private fastTime = 0;
 
   private applyResolution() {
     this.renderScale = settings.get('resolutionScale');
-    const dpr = Math.min(window.devicePixelRatio || 1, 2) * this.renderScale * this.dynamicScale;
+    // One render pixel per CSS pixel, not per device pixel. Following devicePixelRatio up to 2 on a
+    // HiDPI screen quadruples every pixel the frame touches -- main pass, AO, bloom and SMAA all
+    // scale with it -- for a sharpness gain SMAA already covers most of. Anyone with headroom can
+    // supersample again by raising resolutionScale (the ultra preset sets it to 1.5).
+    const dpr = Math.min(window.devicePixelRatio || 1, 1) * this.renderScale * this.dynamicScale;
     this.renderer.setPixelRatio(Math.max(0.5, Math.min(3, dpr)));
   }
 
@@ -73,12 +82,12 @@ export class Engine {
   private adaptResolution(dt: number) {
     if (dt > 1 / 40) { this.slowFrames++; this.fastTime = 0; } else { this.slowFrames = Math.max(0, this.slowFrames - 1); }
     if (dt < 1 / 70) this.fastTime += dt; else this.fastTime = 0;
-    if (this.slowFrames > 45 && this.dynamicScale > 0.6) {
-      this.dynamicScale = Math.max(0.6, this.dynamicScale - 0.1);
+    if (this.slowFrames > 45 && this.dynamicScale > 0.85) {
+      this.dynamicScale = Math.max(0.85, this.dynamicScale - 0.05);
       this.slowFrames = 0;
       this.applyResolution(); this.resize();
     } else if (this.fastTime > 6 && this.dynamicScale < 1) {
-      this.dynamicScale = Math.min(1, this.dynamicScale + 0.1);
+      this.dynamicScale = Math.min(1, this.dynamicScale + 0.05);
       this.fastTime = 0;
       this.applyResolution(); this.resize();
     }

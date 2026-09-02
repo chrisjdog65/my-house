@@ -42,7 +42,13 @@ export class LightManager {
   readonly virtual: VirtualLight[] = [];
   private pointPool: THREE.PointLight[] = [];
   private spotPool: THREE.SpotLight[] = [];
-  private shadowPool: THREE.PointLight[] = [];
+  /**
+   * Shadow casters are spot lights, not point lights. A shadowed point light renders the whole scene
+   * six times a frame, one per cube face -- measured at 1526 of the 3030 draw calls in a furnished
+   * room, half the frame's budget for one lamp. A downward spot renders one map instead of six for
+   * what is, on a ceiling fixture, very nearly the same shadow.
+   */
+  private shadowPool: THREE.SpotLight[] = [];
   private groups = new Map<string, VirtualLight[]>();
   private time = 0;
 
@@ -63,14 +69,16 @@ export class LightManager {
       this.spotPool.push(l);
     }
     for (let i = 0; i < opts.shadows; i++) {
-      const l = new THREE.PointLight(0xffffff, 0, 10, 2);
+      const l = new THREE.SpotLight(0xffffff, 0, 10, Math.PI / 2.6, 0.8, 2);
       l.castShadow = true;
       l.shadow.mapSize.set(1024, 1024);
-      l.shadow.bias = -0.004;
+      l.shadow.bias = -0.002;
       l.shadow.normalBias = 0.03;
       l.shadow.camera.near = 0.08;
-      l.shadow.camera.far = 8;
+      l.shadow.camera.far = 9;
       l.shadow.radius = 3;
+      l.target.position.set(0, -1, 0);
+      l.add(l.target);
       scene.add(l);
       this.shadowPool.push(l);
     }
@@ -151,7 +159,7 @@ export class LightManager {
       if (si >= this.shadowPool.length) break;
       if (!s.v.shadow || !shadowsEnabled) continue;
       const l = this.shadowPool[si++];
-      this.applyPoint(l, s.v);
+      this.applyShadowSpot(l, s.v);
       usedShadow.add(s.v);
     }
     for (; si < this.shadowPool.length; si++) this.shadowPool[si].intensity = 0;
@@ -184,6 +192,20 @@ export class LightManager {
     l.color.copy(v.color);
     l.intensity = v.intensity * this.flick(v);
     l.distance = v.distance;
+  }
+
+  /**
+   * A pooled shadow caster. Widened and lifted slightly relative to the virtual light so a ceiling
+   * fixture still throws its shadow down the whole room rather than a narrow cone.
+   */
+  private applyShadowSpot(l: THREE.SpotLight, v: VirtualLight) {
+    l.position.copy(v.position);
+    l.position.y += 0.08;
+    l.color.copy(v.color);
+    l.intensity = v.intensity * this.flick(v);
+    l.distance = v.distance;
+    l.angle = Math.PI / 2.6;
+    l.penumbra = 0.8;
   }
 
   private applySpot(l: THREE.SpotLight, v: VirtualLight) {
@@ -219,7 +241,10 @@ export class DayLight {
   daylight = 1;
   stars: THREE.Points;
   /** half-size of the sun shadow frustum; it follows the player (sharper shadows, fewer casters) */
-  readonly shadowExtent = 14;
+  // Half-width of the sun's shadow frustum, in metres. Every caster inside it is redrawn into the
+  // depth map each frame, so the area is a direct multiplier on that pass. 12 still spans the whole
+  // plot, so nothing pops as you walk, while costing a quarter less than 14 did.
+  readonly shadowExtent = 12;
   private followTarget = new THREE.Vector3();
   private _m = new THREE.Matrix4();
   private _mi = new THREE.Matrix4();
@@ -253,7 +278,9 @@ export class DayLight {
 
     this.sun = new THREE.DirectionalLight(0xfff2dd, 3.2);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(4096, 4096);
+    // 2048 over a 28 m frustum is ~14 mm per texel, finer than any edge the eye resolves at house
+    // scale. 4096 quadrupled the depth pixels drawn every frame for no visible gain.
+    this.sun.shadow.mapSize.set(2048, 2048);
     this.sun.shadow.camera.near = 1;
     this.sun.shadow.camera.far = 90;
     const S = this.shadowExtent;
