@@ -22,7 +22,9 @@ export function tumbler(ctx: Ctx): THREE.Mesh {
 /** Dinner plate (lathe dish), bottom at y=0. */
 export function dinnerPlate(ctx: Ctx, r = 0.135): THREE.Mesh {
   const s = r / 0.135;
-  return Prim.lathe([[0, 0], [0.09 * s, 0], [0.1 * s, 0.004], [0.125 * s, 0.008], [0.135 * s, 0.018], [0.132 * s, 0.021], [0.12 * s, 0.013], [0.095 * s, 0.01], [0, 0.009]], ctx.mats.ceramic, { segments: 28 });
+  // satin glaze (the mirror-gloss ceramic preset blooms into white discs under the sun)
+  const glaze = ctx.mats.solid(0xfbfbf7, { roughness: 0.38, physical: true, clearcoat: 0.45, clearcoatRoughness: 0.25, envMapIntensity: 0.8 });
+  return Prim.lathe([[0, 0], [0.09 * s, 0], [0.1 * s, 0.004], [0.125 * s, 0.008], [0.135 * s, 0.018], [0.132 * s, 0.021], [0.12 * s, 0.013], [0.095 * s, 0.01], [0, 0.009]], glaze, { segments: 28 });
 }
 
 // -------------------------------------------------------------------------------------------

@@ -962,7 +962,7 @@ export function buildWorkshop(ctx: Ctx, power: BasementPower) {
       g.add(cap);
     }
     placeStatic(ctx, g, 0, 0, 0, [], 'metal');
-    const tubeOn = m.emissive(0xf3f7ff, 1.8, 0xf6f8ff);
+    const tubeOn = m.emissive(0xf3f7ff, 1.05, 0xdfe6ee);
     const tubeOff = m.solid(0xe8ecee, { roughness: 0.4 });
     const emissives: { mesh: THREE.Mesh; on: THREE.Material; off: THREE.Material }[] = [];
     for (const dz of [-0.06, 0.06]) {

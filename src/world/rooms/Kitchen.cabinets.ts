@@ -88,6 +88,8 @@ export interface OpenSpec {
   sfx?: 'drawer' | 'fridge' | 'doorOpen';
   /** decorate the inside of the carcass (run-local coordinates) */
   interior?: (g: THREE.Group, box: Box) => void;
+  /** hole in the carcass top (run-local x/z), e.g. for an undermount sink basin */
+  topCut?: { x0: number; x1: number; z0: number; z1: number };
 }
 
 export type FrontSpec =
@@ -141,9 +143,23 @@ export function buildRun(ctx: Ctx, group: THREE.Group, dyn: THREE.Group, style: 
         // hollow carcass: bottom, top, sides, back (interior material)
         const im = style.interior;
         add(w, 0.02, zFace, x + w / 2, y0 + 0.01, zFace / 2, im);
-        add(w, 0.02, zFace, x + w / 2, y1 - 0.01, zFace / 2, im);
-        add(0.018, y1 - y0, zFace, x + 0.009, (y0 + y1) / 2, zFace / 2, im);
-        add(0.018, y1 - y0, zFace, x + w - 0.009, (y0 + y1) / 2, zFace / 2, im);
+        const tc = open.topCut;
+        if (tc) {
+          // top plate in four pieces around the cutout
+          const piece = (a: number, b: number, c: number, d: number) => { if (b - a > 0.005 && d - c > 0.005) add(b - a, 0.02, d - c, (a + b) / 2, y1 - 0.01, (c + d) / 2, im); };
+          const cx0 = Math.max(x, tc.x0), cx1 = Math.min(x + w, tc.x1), cz0 = Math.max(0, tc.z0), cz1 = Math.min(zFace, tc.z1);
+          piece(x, cx0, 0, zFace);
+          piece(cx1, x + w, 0, zFace);
+          piece(cx0, cx1, 0, cz0);
+          piece(cx0, cx1, cz1, zFace);
+        } else {
+          add(w, 0.02, zFace, x + w / 2, y1 - 0.01, zFace / 2, im);
+        }
+        // sides: painted skin on the outside (may be exposed next to a window/hood slot or a run end), maple inside
+        add(0.004, y1 - y0, zFace, x + 0.002, (y0 + y1) / 2, zFace / 2, style.frame);
+        add(0.014, y1 - y0, zFace, x + 0.011, (y0 + y1) / 2, zFace / 2, im);
+        add(0.004, y1 - y0, zFace, x + w - 0.002, (y0 + y1) / 2, zFace / 2, style.frame);
+        add(0.014, y1 - y0, zFace, x + w - 0.011, (y0 + y1) / 2, zFace / 2, im);
         add(w, y1 - y0, 0.012, x + w / 2, (y0 + y1) / 2, 0.006, im);
         open.interior?.(group, { x0: x + 0.018, x1: x + w - 0.018, y0: y0 + 0.02, y1: y1 - 0.02, z0: 0.012, z1: zFace });
       } else {

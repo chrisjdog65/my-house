@@ -514,7 +514,7 @@ function buildSofa(ctx: Ctx, x: number, y: number, z: number, rotY: number, colo
   p3.rotation.set(-0.3, 0.15, 0.02);
   g.add(p3);
   // folded throw blanket over the +x arm, one flap hanging outside
-  const knit = mats.quilt(0x9fb3bf);
+  const knit = mats.quilt(0xe8d9bd); // cream knit so it reads against the grey-blue fabric
   const fold = Prim.rbox(0.26, 0.05, 0.46, 0.02, knit);
   fold.position.set(L / 2 - 0.1, 0.675, 0.05);
   g.add(fold);

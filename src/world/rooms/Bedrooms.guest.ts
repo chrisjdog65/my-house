@@ -67,8 +67,7 @@ function armoire(ctx: Ctx, x: number, z: number, rotY: number) {
   panel(W - 2 * t, H - 0.1, 0.012, 0, (H - 0.1) / 2 + 0.06, -D / 2 + 0.006, mats.solid(0x4a3626, { roughness: 0.7 }));
   panel(W - 0.06, 0.06, D - 0.06, 0, 0.03, -0.03); // plinth
   const cornice = Prim.rbox(W + 0.06, 0.06, D + 0.04, 0.012, wood); cornice.position.set(0, H - 0.03, 0.01); g.add(cornice);
-  const midShelf = panel(W - 2 * t, t, D - 0.03, 0, 0.55, 0);
-  void midShelf;
+  panel(W - 2 * t, t, D - 0.03, 0, 0.55, 0); // mid shelf
   // interior: rod + garments, folded stacks on the shelf
   const rod = Prim.cylinder(0.012, 0.012, W - 0.08, mats.chrome, { segments: 10 }); rod.rotation.z = Math.PI / 2; rod.position.set(0, H - 0.25, 0.02); g.add(rod);
   const garmentCols = [0x2c3e50, 0xb56576, 0xf1f1ec, 0x6d8b74, 0x8c6a4a, 0x355070];

@@ -302,7 +302,8 @@ export function buildDiningRoom(ctx: Ctx, structure: Structure) {
     const l = Prim.rbox(fw, h, 0.04, 0.008, gilt); l.position.set(-w / 2 - fw / 2, 0, 0.02);
     const r = Prim.rbox(fw, h, 0.04, 0.008, gilt); r.position.set(w / 2 + fw / 2, 0, 0.02);
     const back = Prim.box(w, h, 0.02, mats.black); back.position.z = 0.01;
-    const face = Prim.quad(w, h, mats.mirror, { cast: false }); face.position.z = 0.022;
+    // slightly smoked glass: the plain env-map mirror reads as a blown-out white panel in daylight
+    const face = Prim.quad(w, h, mats.solid(0x9aa6ae, { roughness: 0.04, metalness: 1, envMapIntensity: 1.1 }), { cast: false }); face.position.z = 0.022;
     const crest = Prim.sphere(0.05, gilt, { segments: 12 }); crest.scale.set(1.6, 0.7, 0.5); crest.position.set(0, h / 2 + fw + 0.02, 0.02);
     g.add(top, bot, l, r, back, face, crest);
     g.position.set(WX0, Y + 1.5, -1.1);

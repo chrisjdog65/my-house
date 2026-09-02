@@ -4,7 +4,7 @@
  * plant, rug, curtains, recessed lights, wall clock, wastebasket.
  */
 import * as THREE from 'three';
-import { Prim, place, mergeByMaterial } from '../Builder';
+import { Prim, place } from '../Builder';
 import type { Ctx } from '../Context';
 import { addStatic, bookRow, curtains, lightSwitch, looseBook, mug, plant, recessedLight, rug, tableLamp, Toggle, wallClock } from '../Props';
 import { FLOOR, CEIL, FACE, canvasTex, cushion, liveCanvas, placeStatic, rng32, shelfUnit } from './Bedrooms.shared';

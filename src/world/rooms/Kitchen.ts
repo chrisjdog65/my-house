@@ -49,11 +49,13 @@ export function buildKitchen(ctx: Ctx, structure: Structure) {
   const back = new THREE.Group();
   place(back, BX, fy, BZ, 0);
   const backDyn = dynGroup(BX, fy, BZ, 0);
+  const sinkCut = { x0: 2.45, x1: 3.25, z0: 0.12, z1: 0.55 };
+  const basinCut = { x0: sinkCut.x0 - 0.012, x1: sinkCut.x1 + 0.012, z0: sinkCut.z0 - 0.012, z1: sinkCut.z1 + 0.012 };
   const backUnits: Unit[] = [
     { w: 0.8, front: { kind: 'drawers', n: 3 } },
     { w: 0.8, front: { kind: 'blank' } }, // range
     { w: 0.7, front: { kind: 'door', hinge: 'right', drawer: true } },
-    { w: 1.1, front: { kind: 'doors', falseFront: true, open: { side: 'left', label: 'sink cabinet', interior: interiorPlumbing(ctx) } } },
+    { w: 1.1, front: { kind: 'doors', falseFront: true, open: { side: 'left', label: 'sink cabinet', interior: interiorPlumbing(ctx), topCut: basinCut } } },
     { w: 0.6, front: { kind: 'blank' } }, // dishwasher
     { w: 0.6, front: { kind: 'door', hinge: 'left', drawer: true } },
   ];
@@ -63,7 +65,6 @@ export function buildKitchen(ctx: Ctx, structure: Structure) {
   filler.position.set(-0.04, 0.1 + (BASE_H - 0.1) / 2, (BASE_D - 0.05) / 2);
   back.add(filler);
   buildDishwasherFront(ctx, back, 3.4, 0.6, BASE_D - FRONT_T);
-  const sinkCut = { x0: 2.45, x1: 3.25, z0: 0.12, z1: 0.55 };
   buildSink(ctx, back, backDyn, sinkCut);
   addStatic(ctx, back, [{ size: [backRun.length + 0.12, COUNTER_H, BASE_D + 0.03], center: [backRun.length / 2 - 0.03, COUNTER_H / 2, (BASE_D + 0.03) / 2] }]);
   const backCounter = new THREE.Group();
@@ -254,7 +255,8 @@ export function buildKitchen(ctx: Ctx, structure: Structure) {
       } } } },
       { w: 0.85, front: { kind: 'doors', drawer: true } },
     ];
-    const run = buildRun(ctx, island, islandDyn, isl, units, { depth: 0.9 });
+    // finished end panel on the nook side (the first unit is hollow, so its maple side would show)
+    const run = buildRun(ctx, island, islandDyn, isl, units, { depth: 0.9, ends: [true, false] });
     const L = 2.0;
     // open shelf unit at the south end (x_l 1.7..2.0), opening toward -z (world)
     const shelfMat = isl.frame;

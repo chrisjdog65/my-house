@@ -439,8 +439,9 @@ export function buildLaundry(ctx: Ctx, power: BasementPower) {
         c.position.set(-s * 0.012, ys[i] - 0.15, zz);
         panel.add(c);
       });
-      panel.position.set(s * 0.24, 0, 0);
-      panel.rotation.z = -s * 0.36;
+      // A-frame: feet apart at the floor, the two panels meet under the top bar
+      panel.position.set(s * 0.38, 0, 0);
+      panel.rotation.z = s * 0.3;
       g.add(panel);
     }
     const bar = Prim.cylinder(0.006, 0.006, 1.12, rodMat, { segments: 6 });
@@ -534,7 +535,69 @@ export function buildLaundry(ctx: Ctx, power: BasementPower) {
     placeStatic(ctx, dg, 4.3, -3.6, 0, [], 'concrete');
   }
 
+  // ------------------------------------------------------------------ 3-bag laundry sorter (NE corner) + hook rail with hangers
+  {
+    const g = new THREE.Group();
+    const frameMat = m.solid(0x8a8f94, { roughness: 0.4, metalness: 0.7 });
+    const W = 0.9, D = 0.42, H = 0.78;
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      const leg = Prim.cylinder(0.01, 0.01, H, frameMat, { segments: 8 });
+      leg.position.set(sx * (W / 2 - 0.01), H / 2, sz * (D / 2 - 0.01));
+      g.add(leg);
+    }
+    for (const sz of [-1, 1]) {
+      const rail = Prim.cylinder(0.01, 0.01, W, frameMat, { segments: 8 });
+      rail.rotation.z = Math.PI / 2;
+      rail.position.set(0, H, sz * (D / 2 - 0.01));
+      g.add(rail);
+      const low = Prim.cylinder(0.008, 0.008, W, frameMat, { segments: 6 });
+      low.rotation.z = Math.PI / 2;
+      low.position.set(0, 0.08, sz * (D / 2 - 0.01));
+      g.add(low);
+    }
+    const bagCols = [0xf0eee6, 0x8a8f94, 0x2c3e50];
+    const names = ['WHITES', 'COLORS', 'DARKS'];
+    for (let i = 0; i < 3; i++) {
+      const bx = -W / 3 + i * (W / 3);
+      const bag = Prim.rbox(W / 3 - 0.03, H - 0.16, D - 0.04, 0.03, m.fabric(bagCols[i]));
+      bag.position.set(bx, (H - 0.16) / 2 + 0.1, 0);
+      g.add(bag);
+      const lbl = labelQuad(ctx, names[i], 0.16, 0.05, { bg: '#f4efe4', fg: '#333', font: 'bold 80px Arial, sans-serif' });
+      lbl.position.set(bx, H - 0.24, D / 2 - 0.018);
+      g.add(lbl);
+      // a bit of laundry peeking out of the open top
+      const c = Prim.rbox(0.16, 0.05, 0.14, 0.02, m.fabric(CLOTH[(i * 2 + 5) % CLOTH.length]));
+      c.position.set(bx + (rng() - 0.5) * 0.06, H - 0.06, (rng() - 0.5) * 0.08);
+      c.rotation.set(rng() * 0.4, rng() * 3, rng() * 0.3);
+      g.add(c);
+    }
+    placeStatic(ctx, g, 7.35, -1.55, Math.PI, [{ size: [W, H, D], center: [0, H / 2, 0] }], 'fabric');
+    // hook rail on the east wall above the drying rack
+    const hg = new THREE.Group();
+    const board = Prim.rbox(0.02, 0.07, 0.7, 0.005, m.solid(0xf0ede4, { roughness: 0.5 }));
+    board.position.set(-0.01, 1.85, 0);
+    hg.add(board);
+    for (let i = 0; i < 4; i++) {
+      const z = -0.26 + i * 0.173;
+      const hook = Prim.torus(0.02, 0.005, m.chrome, { arc: Math.PI });
+      hook.rotation.set(0, Math.PI / 2, Math.PI);
+      hook.position.set(-0.04, 1.82, z);
+      hg.add(hook);
+      if (i % 2 === 0) {
+        const hanger = Prim.box(0.008, 0.008, 0.38, m.solid(0xd8d8d4, { roughness: 0.6 }));
+        hanger.position.set(-0.05, 1.72, z);
+        hg.add(hanger);
+        const shirt = Prim.rbox(0.025, 0.5, 0.36, 0.02, m.fabric(CLOTH[(i + 6) % CLOTH.length]));
+        shirt.position.set(-0.05, 1.47, z);
+        hg.add(shirt);
+      }
+    }
+    placeStatic(ctx, hg, 7.85, -3.4, 0, [], 'wood');
+  }
+
   // ------------------------------------------------------------------ sign, lights & switch
+  pictureFrame(ctx, 7.84, y0 + 2.0, -3.4, -Math.PI / 2, 0.62, 0.26,
+    ctx.tex.label('LAUNDRY', { bg: '#2f4a5c', fg: '#f4efe4', sub: 'DROP IT · WASH IT · FOLD IT', font: 'bold 80px Impact, "Arial Black", sans-serif', w: 768, h: 320 }), { frameColor: 0xf0ede4 });
   pictureFrame(ctx, 4.5, y0 + 1.6, -1.07, Math.PI, 0.8, 0.3,
     ctx.tex.label('WASH  ·  DRY  ·  FOLD', { bg: '#f4efe4', fg: '#2f4a5c', sub: 'REPEAT', font: 'bold 64px Georgia, serif', w: 768, h: 288 }), { frameColor: 0x3a2a20 });
   pullChainLight(ctx, 3.5, -4.5, GROUP, { shadow: true, intensity: 10 });
