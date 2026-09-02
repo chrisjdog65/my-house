@@ -239,19 +239,21 @@ function buildWallBits(ctx: Ctx) {
   hook.rotation.z = Math.PI / 2; hook.position.set(WX + T + 0.03, hookY, rz); g.add(hook);
   const hookUp = Prim.cylinder(0.006, 0.006, 0.035, ch, { segments: 8 });
   hookUp.position.set(WX + T + 0.055, hookY + 0.015, rz); g.add(hookUp);
+  // the robe hangs flat on the west wall: its width runs along z, its thickness along x (0.085 off
+  // the wall face like the sleeves, which clears the cap rail at WX+0.028)
   const robeFab = m.fabric(0xf1ece2);
-  const robe = Prim.rbox(0.36, 0.95, 0.09, 0.03, robeFab, { segments: 3 });
-  robe.position.set(WX + 0.08, hookY - 0.455, rz); robe.rotation.y = 0.04; g.add(robe);
-  const collar = Prim.rbox(0.2, 0.12, 0.03, 0.012, robeFab, { segments: 2 });
+  const robe = Prim.rbox(0.09, 0.95, 0.36, 0.03, robeFab, { segments: 3 });
+  robe.position.set(WX + 0.085, hookY - 0.455, rz); robe.rotation.y = 0.04; g.add(robe);
+  const collar = Prim.rbox(0.03, 0.12, 0.2, 0.012, robeFab, { segments: 2 });
   collar.position.set(WX + 0.135, hookY - 0.04, rz); g.add(collar);
   for (const s of [-1, 1]) {
     const sleeve = Prim.rbox(0.09, 0.5, 0.11, 0.035, robeFab, { segments: 3 });
     sleeve.position.set(WX + 0.085, hookY - 0.33, rz + s * 0.2); sleeve.rotation.x = s * 0.12; g.add(sleeve);
   }
-  const belt = Prim.rbox(0.38, 0.05, 0.012, 0.005, m.fabric(0xe1d9cb), { segments: 1 });
+  const belt = Prim.rbox(0.012, 0.05, 0.38, 0.005, m.fabric(0xe1d9cb), { segments: 1 });
   belt.position.set(WX + 0.128, hookY - 0.56, rz); g.add(belt);
-  const tie = Prim.rbox(0.05, 0.3, 0.012, 0.005, m.fabric(0xe1d9cb), { segments: 1 });
-  tie.position.set(WX + 0.128, hookY - 0.72, rz + 0.06); tie.rotation.z = 0.1; g.add(tie);
+  const tie = Prim.rbox(0.012, 0.3, 0.05, 0.005, m.fabric(0xe1d9cb), { segments: 1 });
+  tie.position.set(WX + 0.128, hookY - 0.72, rz + 0.06); tie.rotation.x = 0.1; g.add(tie);
   addStatic(ctx, g);
   // framed prints: over the toilet and on the east wall by the scale
   framedPrint(ctx, 2.05, F + 1.72, SZ - T, Math.PI, 0.36, 0.46, ctx.tex.art(6, 0.78));

@@ -102,7 +102,11 @@ function doubleVanity(ctx: Ctx, x: number, z: number, rotY: number) {
   const towel = foldedTowel(ctx, 0.22, 0.14, 0xdfd8ca, 0.035); towel.position.set(0.0, H + 0.0175, 0.18); towel.rotation.y = 0.1; g.add(towel);
   const tray = Prim.rbox(0.22, 0.014, 0.16, 0.005, mats.solid(0xd9d2c4, { roughness: 0.5, metalness: 0.2 })); tray.position.set(0.78, H + 0.007, 0.1); g.add(tray);
   const candle = Prim.cylinder(0.035, 0.035, 0.07, mats.solid(0xe9e2d0, { roughness: 0.5, physical: true, clearcoat: 0.3 }), { segments: 14 }); candle.position.set(0.72, H + 0.049, 0.06); g.add(candle);
-  placeStatic(ctx, g, x, z, rotY, [{ size: [W + 0.04, H + 0.1, D + 0.03], center: [0, (H + 0.1) / 2, 0.01] }], 'tile');
+  // collider top = the marble surface (H) so things set on the counter rest on it; the backsplash gets its own thin box
+  placeStatic(ctx, g, x, z, rotY, [
+    { size: [W + 0.04, H, D + 0.03], center: [0, H / 2, 0.01] },
+    { size: [W + 0.04, 0.1, 0.02], center: [0, H + 0.05, -D / 2 + 0.01] },
+  ], 'tile');
 
   // faucets (dynamic toggles) with water streams, in world space
   g.updateMatrixWorld(true);
