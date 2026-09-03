@@ -65,7 +65,16 @@ async function main() {
   // replace each material's envMapIntensity with the scene-wide one. Must happen before the world
   // is built, since static batching clones whatever the materials look like at build time.
   mats.setEnvironment(daylight.envMap);
-  const poolSizes = q === 'low' ? { points: 6, spots: 3, shadows: 0 } : q === 'medium' ? { points: 8, spots: 4, shadows: 0 } : q === 'high' ? { points: 10, spots: 6, shadows: 1 } : { points: 12, spots: 8, shadows: 2 };
+  // Pool sizes are a per-PIXEL cost, not a per-light one: three compiles NUM_POINT_LIGHTS and
+  // NUM_SPOT_LIGHTS into the shader and every fragment loops over all of them, doing the full BRDF
+  // and attenuation even for a light whose intensity is zero. 'high' used to declare 17 lights, so
+  // every pixel of every surface paid for 17. The manager assigns the nearest fixtures first and a
+  // room rarely has more than three that matter, so a smaller pool looks the same and shades far
+  // faster.
+  const poolSizes = q === 'low' ? { points: 3, spots: 1, shadows: 0 }
+    : q === 'medium' ? { points: 4, spots: 2, shadows: 0 }
+      : q === 'high' ? { points: 5, spots: 3, shadows: 1 }
+        : { points: 8, spots: 5, shadows: 2 };
   const lights = new LightManager(engine.scene, poolSizes);
   const interact = new InteractableRegistry();
   const batchRoot = new THREE.Group();

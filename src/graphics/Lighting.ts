@@ -71,6 +71,8 @@ export class LightManager {
     for (let i = 0; i < opts.shadows; i++) {
       const l = new THREE.SpotLight(0xffffff, 0, 10, Math.PI / 2.6, 0.8, 2);
       l.castShadow = true;
+      l.userData.wantsShadow = 'lamp'; // the performance governor may switch this one off
+
       l.shadow.mapSize.set(1024, 1024);
       l.shadow.bias = -0.002;
       l.shadow.normalBias = 0.03;
@@ -278,6 +280,7 @@ export class DayLight {
 
     this.sun = new THREE.DirectionalLight(0xfff2dd, 3.2);
     this.sun.castShadow = true;
+    this.sun.userData.wantsShadow = 'sun'; // the performance governor may switch this one off
     // 2048 over a 28 m frustum is ~14 mm per texel, finer than any edge the eye resolves at house
     // scale. 4096 quadrupled the depth pixels drawn every frame for no visible gain.
     this.sun.shadow.mapSize.set(2048, 2048);

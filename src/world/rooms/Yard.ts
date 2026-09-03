@@ -21,9 +21,19 @@ export function buildYard(ctx: Ctx, structure: Structure) {
   // ---------------------------------------------------------------------------------------------
   // Terrain, paving
   // ---------------------------------------------------------------------------------------------
-  const ground = Prim.plane(140, 140, mats.grass, { cast: false });
-  ground.position.set(0, G, 0);
-  ctx.batch.add(ground, { worldUV: true });
+  // The lawn sits at y = -0.9, which is 2.05 m ABOVE the basement floor, so one unbroken plane roofs
+  // the basement over: the stairwell hole in the ground slab looked straight down onto it, which is
+  // the grass you could see at the bottom of the basement stairs. Cut the house footprint out of it,
+  // at the inner face of the foundation wall so the lawn still tucks under the wall with no seam.
+  const hx0 = HOUSE.x0 + HOUSE.extWall / 2, hx1 = HOUSE.x1 - HOUSE.extWall / 2;
+  const hz0 = HOUSE.z0 + HOUSE.extWall / 2, hz1 = HOUSE.z1 - HOUSE.extWall / 2;
+  for (const [gx0, gz0, gx1, gz1] of [
+    [-70, -70, 70, hz0], [-70, hz1, 70, 70], [-70, hz0, hx0, hz1], [hx1, hz0, 70, hz1],
+  ] as [number, number, number, number][]) {
+    const ground = Prim.plane(gx1 - gx0, gz1 - gz0, mats.grass, { cast: false });
+    ground.position.set((gx0 + gx1) / 2, G, (gz0 + gz1) / 2);
+    ctx.batch.add(ground, { worldUV: true });
+  }
 
   const paving = (x0: number, z0: number, x1: number, z1: number, mat: THREE.Material, h = 0.02, y = G) => {
     const m = Prim.box(x1 - x0, h, z1 - z0, mat, { cast: false });

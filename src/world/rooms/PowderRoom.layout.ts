@@ -25,7 +25,7 @@ export const SINK_X = 2.85;
 /** toilet axis z (east wall) — kept toward the north wall so the path between it and the sink stays wide */
 export const TOILET_Z = 0.9;
 /** door casing extents (z) on the west wall; the hinge is on the south jamb */
-export const DOOR_Z0 = 1.02, DOOR_Z1 = 1.98;
+export const DOOR_Z0 = 0.97, DOOR_Z1 = 2.03;
 
 export type Side = 'n' | 's' | 'e' | 'w';
 

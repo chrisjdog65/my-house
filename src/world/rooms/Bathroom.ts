@@ -89,7 +89,7 @@ function buildTilework(ctx: Ctx) {
   const tile = m.subway, T = TILE_T;
   const cap = m.trim, edge = m.ceramic;
   const y0 = F + 0.11, y1 = F + 1.2;   // on top of the baseboard, up to the chair rail
-  const DOOR = 0.485;                   // half-width of the door casing on the west wall
+  const DOOR = 0.535;                   // half-width of the door casing on the west wall
   const SW0 = 0.56, SW1 = 0.68;         // cap-rail cut-out for the light switch
   // wainscot
   wallPanel(g, 'n', WX, TUB.x0, y0, y1, tile, T);

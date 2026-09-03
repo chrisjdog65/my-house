@@ -482,15 +482,20 @@ export class Structure {
       // ceiling
       const ceilY = lvl.y + lvl.ceiling;
       if (this.isUnfinished(room)) {
-        // exposed joists with subfloor above
-        const sub = Prim.plane(rect[2] - rect[0], rect[3] - rect[1], ctx.mats.pine, { cast: false });
-        sub.rotation.x = Math.PI; // face down
-        sub.position.set((rect[0] + rect[2]) / 2, ceilY + 0.24, (rect[1] + rect[3]) / 2);
-        ctx.batch.add(sub, { worldUV: true });
-        for (let x = rect[0] + 0.2; x < rect[2]; x += 0.4) {
-          const j = Prim.box(0.045, 0.24, rect[3] - rect[1], ctx.mats.pine);
-          j.position.set(x, ceilY + 0.12, (rect[1] + rect[3]) / 2);
-          ctx.batch.add(j, { worldUV: true });
+        // Exposed joists with subfloor above, minus the stair openings: this branch ignored
+        // holesAbove, so the subfloor and joists were drawn straight across the basement stairwell
+        // at head height over the top treads.
+        for (const r of rectMinusHoles(rect, holesAbove)) {
+          const sub = Prim.plane(r[2] - r[0], r[3] - r[1], ctx.mats.pine, { cast: false });
+          sub.rotation.x = Math.PI; // face down
+          sub.position.set((r[0] + r[2]) / 2, ceilY + 0.24, (r[1] + r[3]) / 2);
+          ctx.batch.add(sub, { worldUV: true });
+          // Joists keep the room-wide x grid so they stay aligned across a split rectangle.
+          for (let x = Math.ceil((r[0] - rect[0] - 0.2) / 0.4) * 0.4 + rect[0] + 0.2; x < r[2]; x += 0.4) {
+            const j = Prim.box(0.045, 0.24, r[3] - r[1], ctx.mats.pine);
+            j.position.set(x, ceilY + 0.12, (r[1] + r[3]) / 2);
+            ctx.batch.add(j, { worldUV: true });
+          }
         }
       } else {
         for (const r of rectMinusHoles(rect, holesAbove)) {
@@ -648,7 +653,11 @@ export class Structure {
       m.castShadow = true; m.receiveShadow = true;
       const zc = side * halfSpan / 2;
       m.position.set(0, HOUSE.roofBase + rise / 2 + thick / 2 * Math.cos(angle), zc);
-      m.rotation.x = -side * angle;
+      // Rotating about X by t sends the panel's local +z to (0, -sin t, cos t). The panel is centred
+      // half way out from the ridge, so it has to fall as it runs outward: at +side*angle its inner
+      // end sits at the peak and its outer end at the eave. The negated form did the opposite and
+      // hung the roof as a valley -- an upside-down gable.
+      m.rotation.x = side * angle;
       metricUV(m.geometry, 1, 1);
       // rotate UVs so shingle rows run along X: metricUV picks (x, y or z) for the tilted top face; fine.
       ctx.batch.add(m, { worldUV: false });
@@ -702,7 +711,7 @@ export class Structure {
       for (const s2 of [1, -1]) {
         const rake = Prim.box(0.06, 0.2, slopeLen, ctx.mats.trim);
         rake.position.set(side * (x1 + 0.0), HOUSE.roofBase + rise / 2 + 0.1, s2 * halfSpan / 2);
-        rake.rotation.x = -s2 * angle;
+        rake.rotation.x = s2 * angle; // follows the slope panels above
         ctx.batch.add(rake);
       }
     }

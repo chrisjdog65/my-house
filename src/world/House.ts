@@ -28,8 +28,22 @@ export async function buildWorld(ctx: Ctx, progress: (p: number, label: string) 
   const structure = new Structure(ctx);
   structure.build();
 
-  // Safety ground collider under everything (the yard builder adds the visible terrain).
-  ctx.physics.addBox({ x: 0, y: HOUSE.groundY - 0.5, z: 0 }, { x: LOT.x1 - LOT.x0 + 40, y: 1, z: LOT.z1 - LOT.z0 + 40 }, 0, { meta: { surface: 'grass' } });
+  // Safety ground collider under the yard (the yard builder adds the visible terrain). It has to
+  // stop at the house footprint: its top face is at HOUSE.groundY = -0.9, two metres ABOVE the
+  // basement floor, so carrying it straight across the footprint walled the player off partway down
+  // the basement stair. Four bands around the house instead of one slab through it.
+  {
+    const gx0 = HOUSE.x0 - HOUSE.extWall / 2, gx1 = HOUSE.x1 + HOUSE.extWall / 2;
+    const gz0 = HOUSE.z0 - HOUSE.extWall / 2, gz1 = HOUSE.z1 + HOUSE.extWall / 2;
+    const fx0 = LOT.x0 - 20, fx1 = LOT.x1 + 20, fz0 = LOT.z0 - 20, fz1 = LOT.z1 + 20;
+    const bands: [number, number, number, number][] = [
+      [fx0, fz0, fx1, gz0], [fx0, gz1, fx1, fz1], [fx0, gz0, gx0, gz1], [gx1, gz0, fx1, gz1],
+    ];
+    for (const [x0, z0, x1, z1] of bands) {
+      ctx.physics.addBox({ x: (x0 + x1) / 2, y: HOUSE.groundY - 0.5, z: (z0 + z1) / 2 },
+        { x: x1 - x0, y: 1, z: z1 - z0 }, 0, { meta: { surface: 'grass' } });
+    }
+  }
 
   const steps: [string, (c: Ctx, s: Structure) => void][] = [
     ['Arranging the living room…', buildLivingRoom],

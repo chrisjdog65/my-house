@@ -26,7 +26,7 @@ function tileWainscot(ctx: Ctx) {
   const g = new THREE.Group();
   const seg = (w: number, h: number, d: number, x: number, yc: number, z: number, m: THREE.Material = tile) => { const b = Prim.box(w, h, d, m); b.position.set(x, yc, z); g.add(b); };
   const H = WAINSCOT_H;
-  const doorL = -6.98, doorR = -6.02; // casing edges of the door on the north wall
+  const doorL = -7.03, doorR = -5.97; // casing edges of the door on the north wall
   // wainscot
   seg(doorL - WEST, H, TILE_T, (WEST + doorL) / 2, H / 2, NORTH - TILE_T / 2);
   seg(EAST - doorR, H, TILE_T, (doorR + EAST) / 2, H / 2, NORTH - TILE_T / 2);

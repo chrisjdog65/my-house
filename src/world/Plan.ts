@@ -153,6 +153,10 @@ export const WALLS: WallDef[] = [
 const DOOR_H = 2.1;
 const WIN_H = 1.45, WIN_B = 0.85;
 
+// Interior doors are 0.9 m wide. Five were 0.8, and 0.8 does not admit the player: the open leaf's
+// collider eats 0.08 m of the aperture, leaving 0.72 m clear against the ~0.735 m the character
+// controller needs, so the Powder Room, both closets, the Bathroom and the Master Bathroom could be
+// seen into but never entered.
 export const OPENINGS: Record<FloorId, OpeningDef[]> = {
   ground: [
     // exterior
@@ -174,7 +178,7 @@ export const OPENINGS: Record<FloorId, OpeningDef[]> = {
     { x: -1.5, z: -0.7, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: -1, id: 'diningDoor' },
     { x: -4.75, z: 0, w: 3.2, h: 2.3, bottom: 0, kind: 'arch' },
     { x: 1.5, z: -0.45, w: 1.6, h: 2.25, bottom: 0, kind: 'arch' },
-    { x: 1.5, z: 1.5, w: 0.8, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'right', swing: 1, id: 'powderDoor' },
+    { x: 1.5, z: 1.5, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'right', swing: 1, id: 'powderDoor' },
     { x: 1.5, z: 4.25, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: 1, id: 'studyDoor' },
     { x: -0.775, z: -1.4, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: 1, id: 'basementDoor' },
   ],
@@ -194,12 +198,12 @@ export const OPENINGS: Record<FloorId, OpeningDef[]> = {
     // interior
     { x: -1.5, z: 4, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: -1, id: 'masterDoor' },
     { x: -1.5, z: -3.5, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'right', swing: -1, id: 'bedroom2Door' },
-    { x: -6.5, z: 1.5, w: 0.8, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: -1, id: 'masterBathDoor' },
-    { x: -3.25, z: 1.5, w: 0.8, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'right', swing: -1, id: 'closetDoor' },
+    { x: -6.5, z: 1.5, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: -1, id: 'masterBathDoor' },
+    { x: -3.25, z: 1.5, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'right', swing: -1, id: 'closetDoor' },
     { x: 1.5, z: 4, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'right', swing: 1, id: 'bedroom3Door' },
-    { x: 1.5, z: 0, w: 0.8, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: 1, id: 'bathDoor' },
+    { x: 1.5, z: 0, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: 1, id: 'bathDoor' },
     { x: 1.5, z: -3.5, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: 1, id: 'bedroom4Door' },
-    { x: 6.5, z: -1.5, w: 0.8, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: 1, id: 'closet2Door' },
+    { x: 6.5, z: -1.5, w: 0.9, h: DOOR_H, bottom: 0, kind: 'door', hinge: 'left', swing: 1, id: 'closet2Door' },
   ],
   basement: [
     { x: -5, z: 6, w: 0.8, h: 0.42, bottom: 2.05, kind: 'basementWindow' },

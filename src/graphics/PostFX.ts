@@ -12,6 +12,8 @@ import { settings } from '../core/Settings';
 
 /** Ambient occlusion is resolved at this fraction of the render resolution. */
 const AO_SCALE = 0.5;
+/** Bloom is resolved at this fraction of the render resolution. */
+const BLOOM_SCALE = 0.5;
 
 export class PostFX {
   composer: EffectComposer;
@@ -61,7 +63,10 @@ export class PostFX {
     // Reuse the scene depth and derive normals from it (passing no normal texture selects the
     // reconstruct-from-depth path), so the pass no longer re-renders the scene for a normal buffer.
     this.gtao.setGBuffer(depthTexture, undefined);
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.12, 0.3, 1.35);
+    // Bloom at half resolution. It is a chain of about eleven blur passes over a five-level mip
+    // pyramid, and it is a blur: resolving it per-pixel is spending fill on detail the effect then
+    // throws away.
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x * BLOOM_SCALE, size.y * BLOOM_SCALE), 0.12, 0.3, 1.35);
     this.smaa = new SMAAPass();
     this.output = new OutputPass();
 
@@ -91,7 +96,7 @@ export class PostFX {
     this.depthTexture.image.height = h * pr;
     this.depthTexture.needsUpdate = true;
     this.gtao.setSize(w * pr * AO_SCALE, h * pr * AO_SCALE);
-    this.bloom.setSize(w, h);
+    this.bloom.setSize(w * BLOOM_SCALE, h * BLOOM_SCALE);
   }
 
   render(dt: number) {
