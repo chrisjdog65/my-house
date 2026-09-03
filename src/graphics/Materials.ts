@@ -69,8 +69,35 @@ export class MaterialLibrary {
     }
   }
 
+  /**
+   * Round the numeric knobs to coarse steps before a material is built or looked up.
+   *
+   * Room builders ask for whatever value read well at the time -- roughness 0.45 here, 0.5 there,
+   * envMapIntensity 0.6 and 0.65 -- and each distinct combination becomes its own material, which
+   * the static batch then cannot merge: 186 distinct materials meant at least 186 draw calls before
+   * a single prop was drawn. Nobody can see the difference between roughness 0.45 and 0.5, so
+   * snapping to a grid collapses the set without changing the look.
+   */
+  private static quantize(opts: MatOpts): MatOpts {
+    const q = (v: number | undefined, step: number) => (v === undefined ? undefined : Math.round(v / step) * step);
+    const o: MatOpts = { ...opts };
+    o.roughness = q(o.roughness, 0.1);
+    o.metalness = q(o.metalness, 0.25);
+    o.envMapIntensity = q(o.envMapIntensity, 0.25);
+    o.normalScale = q(o.normalScale, 0.25);
+    o.clearcoat = q(o.clearcoat, 0.25);
+    o.clearcoatRoughness = q(o.clearcoatRoughness, 0.25);
+    o.emissiveIntensity = q(o.emissiveIntensity, 0.25);
+    o.sheen = q(o.sheen, 0.25);
+    o.aoIntensity = q(o.aoIntensity, 0.25);
+    // Opacity and alphaTest stay exact: they decide whether something reads as glass or as solid.
+    for (const k of Object.keys(o) as (keyof MatOpts)[]) if (o[k] === undefined) delete o[k];
+    return o;
+  }
+
   /** Textured PBR material by procedural texture name. Cached by (name + opts). */
-  tex(name: string, opts: MatOpts = {}): AnyStandard {
+  tex(name: string, rawOpts: MatOpts = {}): AnyStandard {
+    const opts = MaterialLibrary.quantize(rawOpts);
     const key = 'tex:' + name + ':' + JSON.stringify(opts);
     const hit = this.cache.get(key);
     if (hit) return hit as AnyStandard;
@@ -109,7 +136,8 @@ export class MaterialLibrary {
   }
 
   /** Plain (untextured) PBR material. */
-  solid(color: THREE.ColorRepresentation, opts: MatOpts = {}): AnyStandard {
+  solid(color: THREE.ColorRepresentation, rawOpts: MatOpts = {}): AnyStandard {
+    const opts = MaterialLibrary.quantize(rawOpts);
     const key = 'solid:' + new THREE.Color(color).getHexString() + ':' + JSON.stringify(opts);
     const hit = this.cache.get(key);
     if (hit) return hit as AnyStandard;
@@ -179,7 +207,8 @@ export class MaterialLibrary {
   }
 
   /** Material using an arbitrary color texture (art, rug, labels). Not batched-friendly (unique). */
-  image(map: THREE.Texture, opts: MatOpts = {}): AnyStandard {
+  image(map: THREE.Texture, rawOpts: MatOpts = {}): AnyStandard {
+    const opts = MaterialLibrary.quantize(rawOpts);
     const m = new THREE.MeshStandardMaterial({
       map,
       color: opts.color ?? 0xffffff,

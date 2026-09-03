@@ -147,11 +147,12 @@ export class UI {
     el.classList.remove('hidden');
   }
 
-  setFps(fps: number) {
+  /** `note` is what the performance governor has turned down, if anything. */
+  setFps(fps: number, note = '') {
     const el = $('fps');
     const show = settings.get('showFps');
     el.classList.toggle('hidden', !show);
-    if (show) el.textContent = `${Math.round(fps)} fps`;
+    if (show) el.textContent = `${Math.round(fps)} fps${note ? ' · ' + note : ''}`;
   }
 
   setClock(hour: number) {

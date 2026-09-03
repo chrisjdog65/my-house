@@ -11,14 +11,15 @@
 import * as THREE from 'three';
 import type { Ctx } from './Context';
 
-export interface FreezeResult { frozen: number; kept: number; animated: number }
+export interface FreezeResult { frozen: number; kept: number; animated: number; reasons: Record<string, number> }
 
 export function freezeStaticParts(ctx: Ctx, updaters: ((dt: number, t: number) => void)[], simSeconds = 1.2): FreezeResult {
   const root = ctx.dynamic;
   const excluded = new Set<THREE.Object3D>();
   const markTree = (o: THREE.Object3D | undefined | null) => { if (o) o.traverse((c) => excluded.add(c)); };
 
-  for (const it of ctx.interact.items) markTree(it.object);
+  const interactMeshes = new Set<THREE.Object3D>();
+  for (const it of ctx.interact.items) it.object?.traverse((c) => interactMeshes.add(c));
   for (const v of ctx.lights.virtual) for (const e of v.emissives ?? []) excluded.add(e.mesh);
   for (const d of ctx.physics.dynamics) markTree(d.mesh);
 
@@ -43,24 +44,66 @@ export function freezeStaticParts(ctx: Ctx, updaters: ((dt: number, t: number) =
     try { ctx.interact.update(dt, t); } catch { /* ignore */ }
   }
   root.updateWorldMatrix(true, true);
+  root.updateWorldMatrix(true, true);
+  // Exclude the mesh that moved and its own subtree, but NOT its ancestors. Excluding the parent
+  // cascaded to every sibling -- one swinging door leaf kept the whole cabinet dynamic. A group that
+  // moves is detected anyway, because moving it changes the world matrix of every mesh under it.
   let animated = 0;
   for (const m of meshes) {
-    if (before.get(m) !== key(m)) { animated++; markTree(m); let p = m.parent; while (p && p !== root) { excluded.add(p); p = p.parent; } }
+    if (before.get(m) !== key(m)) { animated++; markTree(m); }
   }
 
+  // Then find what moves when the player USES something. Excluding an interactable's whole object
+  // tree kept 529 meshes dynamic, but almost none of them move: a cabinet's carcass, counter and
+  // handle are as static as the wall behind them, and only the door swings. So rather than trust
+  // the grouping, operate each interactable and watch. Anything that does not budge is static, and
+  // stops costing a draw call in the main pass and in every shadow map.
+  const step = (n: number) => {
+    for (let i = 0; i < n; i++) {
+      t += dt;
+      for (const u of updaters) { try { u(dt, t); } catch { /* ignore during probing */ } }
+      try { ctx.interact.update(dt, t); } catch { /* ignore */ }
+    }
+    root.updateWorldMatrix(true, true);
+  };
+  const noteMovers = () => {
+    for (const m of meshes) {
+      if (excluded.has(m)) continue;
+      if (before.get(m) !== key(m)) markTree(m);
+    }
+  };
+  const arg = { playerPos: new THREE.Vector3(), cameraDir: new THREE.Vector3(0, 0, 1), cameraPos: new THREE.Vector3() };
+  for (const it of ctx.interact.items) {
+    // Picking something up hands it to the carry system rather than toggling it, and its mesh is
+    // already excluded as a physics body, so leave those alone.
+    if ((it as { kind?: string }).kind === 'pickup') { markTree(it.object); continue; }
+    try {
+      it.interact(arg);
+      step(18);          // long enough for a swing or slide to have visibly started
+      noteMovers();
+      it.interact(arg);  // put it back the way it was
+      step(18);
+      noteMovers();
+    } catch {
+      // If operating it throws we cannot tell what it would have moved, so keep it all.
+      markTree(it.object);
+    }
+  }
+  // Whatever ended up displaced by the probing is excluded anyway by the comparisons above.
+  root.updateWorldMatrix(true, true);
+  noteMovers();
+
   let frozen = 0, kept = 0;
+  const reasons: Record<string, number> = {};
+  const keep = (why: string) => { kept++; reasons[why] = (reasons[why] ?? 0) + 1; };
   const toFreeze: THREE.Mesh[] = [];
   for (const m of meshes) {
-    if (excluded.has(m)) { kept++; continue; }
-    // any excluded ancestor (a moving group) keeps its children
-    let p = m.parent, skip = false;
-    while (p && p !== root) { if (excluded.has(p)) { skip = true; break; } p = p.parent; }
-    if (skip) { kept++; continue; }
-    if ((m as any).isInstancedMesh || (m as any).isSkinnedMesh || !m.visible) { kept++; continue; }
-    if (m.userData.keepSeparate || m.userData.animated || m.userData.pickup || m.userData.dynamic) { kept++; continue; }
+    if (excluded.has(m)) { keep(interactMeshes.has(m) ? 'moves when used' : 'moves or is driven'); continue; }
+    if ((m as any).isInstancedMesh || (m as any).isSkinnedMesh || !m.visible) { keep('instanced/skinned/hidden'); continue; }
+    if (m.userData.keepSeparate || m.userData.animated || m.userData.pickup || m.userData.dynamic) { keep('flagged by its builder'); continue; }
     const mats = Array.isArray(m.material) ? m.material : [m.material];
     const bad = mats.some((mat) => !(mat as any).isMeshStandardMaterial || mat.transparent || mat.onBeforeCompile !== THREE.Material.prototype.onBeforeCompile);
-    if (bad || mats.length !== 1) { kept++; continue; }
+    if (bad || mats.length !== 1) { keep(mats.length !== 1 ? 'multi-material' : 'transparent or custom shader'); continue; }
     toFreeze.push(m);
   }
   for (const m of toFreeze) {
@@ -75,5 +118,5 @@ export function freezeStaticParts(ctx: Ctx, updaters: ((dt: number, t: number) =
     if (o !== root && o.children.length === 0 && !(o instanceof THREE.Mesh) && !(o as any).isLight && !(o as any).isPoints && !excluded.has(o)) o.parent?.remove(o);
   };
   prune(root);
-  return { frozen, kept, animated };
+  return { frozen, kept, animated, reasons };
 }

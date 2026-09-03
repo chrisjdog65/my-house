@@ -32,11 +32,47 @@ export class Engine {
   private perfWindow = 0;
   private perfFrames = 0;
   private perfHold = 0;
+  private perfSteps = 0;
   private shadowTick = 0;
-  /** Rebuild shadow maps every Nth frame; raised by the governor when frames are scarce. */
+  /** How many frames between rebuilds of any one shadow map; raised by the governor. */
   private shadowInterval = 2;
+  private shadowCasters: (THREE.Light & { shadow?: THREE.LightShadow })[] = [];
+  private shadowScanAt = -1;
+
+  /**
+   * Refresh one shadow map per frame, round-robin, rather than all of them together.
+   *
+   * Rebuilding a shadow map means redrawing every caster into it, so doing them all on the same
+   * frame makes that frame far more expensive than its neighbours -- a sawtooth that reads as
+   * stutter even when the average frame rate looks fine. three gates each light separately
+   * (WebGLShadowMap: `shadow.autoUpdate === false && shadow.needsUpdate === false` skips it), so
+   * each light can take its turn and no single frame carries them all.
+   */
+  private stepShadows() {
+    // The pool is built once, but rescan occasionally in case a light was added.
+    if (this.time - this.shadowScanAt > 5) {
+      this.shadowScanAt = this.time;
+      this.shadowCasters = [];
+      this.scene.traverse((o) => {
+        const l = o as THREE.Light & { shadow?: THREE.LightShadow };
+        if ((l as THREE.SpotLight).isSpotLight || (l as THREE.DirectionalLight).isDirectionalLight || (l as THREE.PointLight).isPointLight) {
+          if (l.castShadow && l.shadow) { l.shadow.autoUpdate = false; this.shadowCasters.push(l); }
+        }
+      });
+    }
+    // The outer gate has to be open every frame; the per-light flags decide who actually redraws.
+    this.renderer.shadowMap.needsUpdate = true;
+    const n = this.shadowCasters.length;
+    if (!n) return;
+    const period = n * this.shadowInterval;
+    const phase = this.shadowTick++ % period;
+    for (let i = 0; i < n; i++) {
+      const sh = this.shadowCasters[i].shadow;
+      if (sh) sh.needsUpdate = phase === i * this.shadowInterval;
+    }
+  }
   /** Highest level the governor may climb to. */
-  private static readonly MAX_PERF_LEVEL = 5;
+  private static readonly MAX_PERF_LEVEL = 7;
   /** Reported so the UI can say what was turned down. */
   perfNote = '';
 
@@ -121,14 +157,16 @@ export class Engine {
       if (u.wantsShadow === 'lamp') (o as THREE.SpotLight).castShadow = s.shadows && l < 3;
       else if (u.wantsShadow === 'sun') (o as THREE.DirectionalLight).castShadow = s.shadows && l < 5;
     });
-    const scale = l >= 4 ? 0.8 : l >= 2 ? 0.9 : 1;
+    if (this.postfx) this.postfx.smaa.enabled = settings.data.antialias && l < 6;
+    const scale = l >= 7 ? 0.65 : l >= 6 ? 0.75 : l >= 4 ? 0.8 : l >= 2 ? 0.9 : 1;
     if (scale !== this.dynamicScale) { this.dynamicScale = scale; this.applyResolution(); this.resize(); }
-    this.renderer.shadowMap.needsUpdate = true;
+    this.shadowScanAt = -1; // castShadow changed; rebuild the round-robin list
     const off = [];
     if (l >= 1) off.push('bloom');
     if (l >= 2) off.push('ambient occlusion');
     if (l >= 3) off.push('lamp shadows');
     if (l >= 5) off.push('sun shadows');
+    if (l >= 6) off.push('antialiasing');
     if (scale < 1) off.push(`resolution ${Math.round(scale * 100)}%`);
     this.perfNote = off.length ? 'reduced: ' + off.join(', ') : '';
   }
@@ -141,16 +179,24 @@ export class Engine {
     this.perfWindow += dt;
     this.perfFrames++;
     if (this.perfHold > 0) this.perfHold -= dt;
-    if (this.perfWindow < 1.5) return;
+    // Short windows while it is still finding the machine's level, long ones once it has settled,
+    // so the opening seconds are not spent laggy but a settled game does not keep changing.
+    const settling = this.perfSteps < 4;
+    if (this.perfWindow < (settling ? 0.6 : 2)) return;
     const fps = this.perfFrames / this.perfWindow;
     this.perfWindow = 0; this.perfFrames = 0;
     if (this.perfHold > 0) return;
-    if (fps < 50 && this.perfLevel < Engine.MAX_PERF_LEVEL) {
-      this.perfLevel++;
+    if (fps < 52 && this.perfLevel < Engine.MAX_PERF_LEVEL) {
+      // Jump several rungs at once when the frame rate is far off target rather than crawling down
+      // one setting every couple of seconds.
+      const jump = fps < 18 ? 3 : fps < 30 ? 2 : 1;
+      this.perfLevel = Math.min(Engine.MAX_PERF_LEVEL, this.perfLevel + jump);
+      this.perfSteps++;
       this.applyPerfLevel();
-      this.perfHold = 3;
+      this.perfHold = settling ? 0.8 : 3;
     } else if (fps > 75 && this.perfLevel > 0) {
       this.perfLevel--;
+      this.perfSteps++;
       this.applyPerfLevel();
       this.perfHold = 6;
     }
@@ -196,8 +242,7 @@ export class Engine {
       this.lastTime = now;
       this.time += dt;
       if (this.adaptive) this.governPerformance(dt);
-      // Shadow maps refresh on their own cadence, not every frame.
-      this.renderer.shadowMap.needsUpdate = (this.shadowTick++ % this.shadowInterval) === 0;
+      this.stepShadows();
       for (const u of this.updaters) u(dt, this.time);
       this.lastStats = { calls: this.renderer.info.render.calls, triangles: this.renderer.info.render.triangles };
       this.renderer.info.reset();

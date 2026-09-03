@@ -102,7 +102,8 @@ async function main() {
   if (!params.has('nofreeze')) {
     ui.setProgress(0.9, 'Optimizing…');
     const fr = freezeStaticParts(ctx, updaters);
-    console.info(`[freeze] baked ${fr.frozen} static parts into the batch; ${fr.kept} dynamic meshes kept (${fr.animated} animate)`);
+    console.info(`[freeze] baked ${fr.frozen} static parts into the batch; ${fr.kept} dynamic meshes kept (${fr.animated} animate)`, fr.reasons);
+    (window as unknown as { __freeze?: unknown }).__freeze = fr;
   }
   // Small props stop casting shadows. Every caster is redrawn into the sun's depth map and again
   // into the shadowing lamp's, so a mug or a paperback costs as much per frame as the sofa while
@@ -188,7 +189,7 @@ async function main() {
   let frameCount = 0;
   const camDir = new THREE.Vector3();
   const camQuat = new THREE.Quaternion();
-  engine.onFps = (f) => ui.setFps(f);
+  engine.onFps = (f) => ui.setFps(f, engine.perfNote);
   engine.onUpdate((dt, t) => {
     input.poll();
     const playing = ui.state === 'playing';
